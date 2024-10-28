@@ -8,5 +8,29 @@ export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+    enableCheckUpdates: true,
+    accessMode: 'backend',
+  },
+  logo: {
+    enable: true,
+    source: '/public/logo.png',
+  },
+  navigation: {
+    styleType: 'plain',
+  },
+  sidebar: {
+    width: 200,
+  },
+  theme: {
+    mode: 'auto',
+    radius: '0.25',
+    semiDarkSidebar: false,
+  },
+  widget: {
+    languageToggle: false,
+    themeToggle: true,
+  },
+  breadcrumb: {
+    showIcon: false,
   },
 });
