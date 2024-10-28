@@ -16,10 +16,9 @@ import locale from '../../../../public/locale.json';
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
 import 'ag-grid-charts-enterprise/styles/ag-theme-quartz.min.css';
 
-// @ts-ignore
-LicenseManager.setLicenseKey(
-  '[v3][Release][0102]_MTcyODA1NzY1NzgzNA==0539f79f0539aaea0368f38257ce134a',
-);
+const LicenseKey =
+  '[v3][Release][0102]_MTcyODA1NzY1NzgzNA==0539f79f0539aaea0368f38257ce134a';
+LicenseManager.setLicenseKey(LicenseKey);
 
 // 主题
 const { isDark } = usePreferences();
