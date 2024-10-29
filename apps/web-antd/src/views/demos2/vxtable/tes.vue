@@ -16,10 +16,9 @@ import locale from '../../../../public/locale.json';
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
 import 'ag-grid-charts-enterprise/styles/ag-theme-quartz.min.css';
 
-// @ts-ignore
-LicenseManager.setLicenseKey(
-  '[v3][Release][0102]_MTcyODA1NzY1NzgzNA==0539f79f0539aaea0368f38257ce134a',
-);
+const AgGridLicenseKey =
+  '[v3][Release][0102]_MTcyODA1NzY1NzgzNA==0539f79f0539aaea0368f38257ce134a';
+LicenseManager.setLicenseKey(AgGridLicenseKey);
 
 // 主题
 const { isDark } = usePreferences();
@@ -164,11 +163,11 @@ onMounted(() => {
 
 <style scoped>
 .ag-theme-quartz-dark {
-  --ag-foreground-color: '#FFF';
   --ag-background-color: '#1C1E23';
   --ag-browser-color-scheme: 'dark';
   --ag-header-background-color: #2f3033;
   --ag-chrome-background-color: '#2C2D32';
   --ag-oddrow-background-color: '#1F2836';
+  --ag-odd-row-background-color: '#0A1830';
 }
 </style>
