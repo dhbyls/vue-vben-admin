@@ -10,7 +10,6 @@ import { AgGridVue } from 'ag-grid-vue3';
 
 import { getPandianDataApi } from '#/api';
 
-// @ts-ignore
 import locale from '../../../../public/locale.json';
 
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
