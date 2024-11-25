@@ -397,7 +397,7 @@ const filterOption = (input: string, option: any) => {
 // const rowStyle = { background: 'black' };
 const getRowStyle = (params: any) => {
   if (params.data.user_name === '梁星天') {
-    return { background: 'red', color: '#fff' };
+    return { background: '#d0fce3' };
   }
 };
 </script>
