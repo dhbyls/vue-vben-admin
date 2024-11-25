@@ -15,6 +15,7 @@ import {
   message,
   Select,
   Textarea,
+  Tooltip,
 } from 'ant-design-vue';
 
 import { getImgTextApi, getPandianDataApi, uptPandianDataApi } from '#/api';
@@ -38,6 +39,19 @@ const agGridTheme = computed(() =>
 // 租户id
 const tenant_id = ref<string>('');
 
+const editable = ref(false); // 单元格编辑模式
+const dzable = ref(false); // 对账模式
+
+const dzableChange = (_e: any) => {
+  // console.log(e.target.checked);
+};
+
+const rowClassRules = {
+  'row-red': (params: any) => params.data.user_name === '公用',
+  // 'row-green': (params: any) => params.data.age >= 30 && params.data.age < 35,
+  // 'row-blue': (params:) => params.data.age >= 35,
+};
+
 // 图片
 const open = ref<boolean>(false);
 const imgs = reactive({ data: [] });
@@ -57,7 +71,6 @@ const tiquwenzi = (val: String) => {
     }
   });
 };
-
 const columnDefs = ref([
   {
     headerName: '序号',
@@ -65,6 +78,7 @@ const columnDefs = ref([
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     cellDataType: 'number',
+    editable: false,
   },
   {
     headerName: '编码',
@@ -72,6 +86,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '名称',
@@ -79,6 +94,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '规格型号',
@@ -86,6 +102,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '品牌',
@@ -93,6 +110,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '数量',
@@ -100,6 +118,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
     cellDataType: 'number',
     // cellStyle: { backgroundColor: "#aaffaa" }
   },
@@ -109,6 +128,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '使用人',
@@ -116,6 +136,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '使用状态',
@@ -123,6 +144,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
     cellEditor: 'agRichSelectCellEditor',
     cellEditorParams: {
       values: () => {
@@ -141,6 +163,7 @@ const columnDefs = ref([
     flex: 1,
     // filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
     cellDataType: 'dateString',
   },
   {
@@ -149,6 +172,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '备注',
@@ -156,6 +180,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '创建人',
@@ -163,6 +188,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '创建时间',
@@ -170,6 +196,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '更新人',
@@ -177,6 +204,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '最后更新时间',
@@ -184,6 +212,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable,
   },
   {
     headerName: '打印标签',
@@ -191,6 +220,7 @@ const columnDefs = ref([
     flex: 1,
     filter: true,
     floatingFilter: true,
+    editable,
   },
   // { field: "button", cellRenderer: CustomButtonComponent },
 ]);
@@ -223,6 +253,11 @@ const gridOptions = {
     // 清空图片的文字
     // img_text.value = '';
   },
+  // 单元格双击事件
+  onCellDoubleClicked: (_params: { api: any; data: any }) => {
+    // console.log(params);
+  },
+
   // 侧边工具栏
   sideBar: {
     toolPanels: [
@@ -286,30 +321,41 @@ const gridOptions = {
   },
 };
 onMounted(() => {
-  // const rowData1 = getPandianDataApi();
+  // const rowData1 = getPandianDataApi({
+  //   tenant_id: '87627E8EFF83A13D08A8AE873EB98DW2',
+  // });
   // rowData1.then((res) => {
   //   rowData.value = res;
   // });
 });
 
-const onCellValueChanged = async (event: {
-  colDef: any;
-  data: any;
-  newValue: any;
-  oldValue: any;
-}) => {
-  const updatedData = event.data;
+const onCellValueChanged = async (params: any) => {
+  const updatedData = params.data;
   const req_params = {
     id: updatedData.id,
-    field: event.colDef.field,
-    oldvalue: event.oldValue,
-    newValue: event.newValue,
+    field: params.colDef.field,
+    oldvalue: params.oldValue,
+    newValue: params.newValue,
     tenant_id: tenant_id.value,
   };
   uptPandianDataApi(req_params).then((res) => {
     if (res.code === 0) {
       message.success({
         content: res.msg,
+      });
+
+      // 当单元格值发生变化时，重绘该行
+      const changedCell = params.colDef.field;
+      gridApi.value.redrawRows({
+        rowNodes: [params.node], // 刷新行节点
+        columns: [changedCell], // 刷新发生变化的列
+      });
+      // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
+      gridApi.value.refreshCells({
+        force: true,
+        suppressFlash: true,
+        rowNodes: [params.node], // 刷新行节点
+        columns: [changedCell], // 刷新发生变化的列
       });
     } else {
       message.error({
@@ -335,6 +381,7 @@ const handleChange = () => {
   const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
   rowData1.then((res) => {
     rowData.value = res;
+    // gridApi.value.redrawRows();
   });
 };
 const handleBlur = () => {
@@ -345,6 +392,13 @@ const handleFocus = () => {
 };
 const filterOption = (input: string, option: any) => {
   return option.value.toLowerCase().includes(input.toLowerCase());
+};
+
+// const rowStyle = { background: 'black' };
+const getRowStyle = (params: any) => {
+  if (params.data.user_name === '梁星天') {
+    return { background: 'red', color: '#fff' };
+  }
 };
 </script>
 
@@ -376,18 +430,28 @@ const filterOption = (input: string, option: any) => {
         @input="onFilterTextBoxChanged()"
       />
       <Checkbox v-model:checked="open" class="ml-4">开启图片预览</Checkbox>
+      <Checkbox v-model:checked="editable" class="ml-4">开启表格编辑</Checkbox>
+
+      <Tooltip placement="top">
+        <template #title>
+          <span v-if="!dzable">开启后，双击上层单元格智能搜索匹配</span>
+          <span v-else>关闭后，大屏更适合编辑单元格</span>
+        </template>
+        <Checkbox v-model:checked="dzable" class="ml-4" @change="dzableChange">
+          <span style="color: red">开启对账模式</span>
+        </Checkbox>
+      </Tooltip>
     </div>
-    <div
-      class="flex flex-col p-4 lg:flex-row"
-      style="height: calc(100% - 50px)"
-    >
+    <div :class="dzable ? 'dz' : 'edit'" class="flex flex-col p-4 lg:flex-row">
       <div class="card-box w-full p-2">
         <AgGridVue
           :cell-selection="cellSelection"
           :class="agGridTheme"
           :column-defs="columnDefs"
           :column-hover-highlight="false"
+          :get-row-style="getRowStyle"
           :grid-options="gridOptions"
+          :row-class-rules="rowClassRules"
           :row-data="rowData"
           :suppress-row-hover-highlight="false"
           cache-block-size="{50}"
@@ -437,6 +501,14 @@ const filterOption = (input: string, option: any) => {
 </template>
 
 <style scoped>
+.dz {
+  height: calc(50% - 50px);
+}
+
+.edit {
+  height: calc(100% - 50px);
+}
+
 .ag-theme-balham-dark {
   --ag-background-color: '#1C1E23';
   --ag-browser-color-scheme: 'dark';
@@ -452,5 +524,9 @@ const filterOption = (input: string, option: any) => {
 
 .cell-red {
   background-color: #f08080; /* 红色背景 */
+}
+
+.row-red {
+  background-color: #fdd;
 }
 </style>
