@@ -7,6 +7,26 @@ export async function getPandianDataApi(params: any) {
   return requestClient.post<List[]>('/pandian/pd_list', params);
 }
 
+/** 获取所有财政数据 */
+export async function getCzDataApi(params: any) {
+  return requestClient.post('/CzAssets/cz_list', params);
+}
+
+/** 拆分盘点的资产数量 */
+export async function caifenPdDataApi(params: any) {
+  return requestClient.post('/pandian/caifenshuliang', params);
+}
+
+/** 取消绑定财政数据 */
+export async function unBindCzCode(params: any) {
+  return requestClient.post('/CzAssets/unbind_cz_code', params);
+}
+
+/** 绑定财政数据 */
+export async function bindCzCode(params: any) {
+  return requestClient.post('/CzAssets/bind_cz_code', params);
+}
+
 /** 修改实际盘点数据 */
 export async function uptPandianDataApi(params: any) {
   return requestClient.post('/pandian/pd_upt', params);
