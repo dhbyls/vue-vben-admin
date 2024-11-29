@@ -257,6 +257,8 @@ const gridOptions = {
   // pagination:true,
   // paginationPageSize:2,
 
+  enterNavigatesVertically: true,
+  // enterNavigatesVerticallyAfterEdit: true,
   undoRedoCellEditing: true, // 启用撤销重做
   undoRedoCellEditingLimit: 20, // 设置撤销重做的步数限制
 
@@ -286,7 +288,9 @@ const gridOptions = {
   },
 };
 onMounted(() => {
-  const rowData1 = getPandianDataApi();
+  const rowData1 = getPandianDataApi({
+    tenant_id: '87627E8EFF83A13D08A8AE873EB98DW2',
+  });
   rowData1.then((res) => {
     rowData.value = res;
   });

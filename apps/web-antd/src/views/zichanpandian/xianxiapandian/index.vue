@@ -981,8 +981,9 @@ const gridOptions = {
   // paginationPageSize:2,
 
   singleClickEdit: false, // 配置单击进入编辑模式
+  enterNavigatesVertically: true, // 按下回车键将向下移动到下面的单元格
   undoRedoCellEditing: true, // 启用撤销重做
-  undoRedoCellEditingLimit: 20, // 设置撤销重做的步数限制
+  undoRedoCellEditingLimit: 50, // 设置撤销重做的步数限制
 
   rowSelection: {
     mode: 'multiRow',
@@ -1046,6 +1047,8 @@ const onCellValueChanged = async (params: any) => {
         rowNodes: [params.node], // 刷新行节点
         columns: [changedCell], // 刷新发生变化的列
       });
+      gridApi.value.stopEditing();
+      gridApi.value.getUndoRedoService().clear(); // 清空当前的撤销堆栈，防止onFilterChanged()重置后，导致撤销功能失效
       gridApi.value.onFilterChanged();
     } else {
       message.error({
