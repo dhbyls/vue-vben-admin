@@ -2,6 +2,10 @@ import type { List } from '#/type';
 
 import { requestClient } from '#/api/request';
 
+/** 获取租户数据 */
+export async function getTenantListDataApi() {
+  return requestClient.post<List[]>('/tenant/list');
+}
 /** 获取实际盘点数据 */
 export async function getPandianDataApi(params: any) {
   return requestClient.post<List[]>('/pandian/pd_list', params);
@@ -25,6 +29,11 @@ export async function unBindCzCode(params: any) {
 /** 绑定财政数据 */
 export async function bindCzCode(params: any) {
   return requestClient.post('/CzAssets/bind_cz_code', params);
+}
+
+/** 反向建盘点绑定财政数据 */
+export async function xjBindCzCode(params: any) {
+  return requestClient.post('/CzAssets/xj_bind_cz_code', params);
 }
 
 /** 修改实际盘点数据 */

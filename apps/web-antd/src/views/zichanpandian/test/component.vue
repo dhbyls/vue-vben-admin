@@ -3,7 +3,7 @@
 //         <!-- {{ slotProps.tableData }} -->
 
 // import MyCompoent from '../../Components/MyCompoent.vue';
-// import { MdiKeyboardEsc } from '@vben/icons';
+// import { MdiKeyboardEsc } from '@vben/';
 
 // import { reactive, ref } from 'vue';
 // import { Button, Input, InputSearch, Drawer } from 'ant-design-vue';

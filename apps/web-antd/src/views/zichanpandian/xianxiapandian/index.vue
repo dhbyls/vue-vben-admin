@@ -3,6 +3,7 @@ import type { List } from '#/type';
 
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
 
+import { FrameReloadRounded } from '@vben/icons';
 import { usePreferences } from '@vben/preferences';
 
 import { LicenseManager } from 'ag-grid-charts-enterprise';
@@ -27,8 +28,10 @@ import {
   getCzDataApi,
   getImgTextApi,
   getPandianDataApi,
+  getTenantListDataApi,
   unBindCzCode,
   uptPandianDataApi,
+  xjBindCzCode,
 } from '#/api';
 
 import locale from '../../../../public/locale.json';
@@ -59,12 +62,6 @@ const confirmLoading = ref<boolean>(false); // 拆分Model确认按钮加载状�
 
 const dzableChange = (_e: any) => {
   // console.log(e.target.checked);
-};
-
-const rowClassRules = {
-  'row-red': (params: any) => params.data.user_name === '公用',
-  // 'row-green': (params: any) => params.data.age >= 30 && params.data.age < 35,
-  // 'row-blue': (params:) => params.data.age >= 35,
 };
 
 // 图片
@@ -98,6 +95,13 @@ const czColumnDefs = ref([
     editable: false,
   },
   {
+    headerName: '财政编码',
+    field: 'assets_code',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+  },
+  {
     headerName: '名称',
     field: 'name',
     flex: 1,
@@ -105,9 +109,18 @@ const czColumnDefs = ref([
     floatingFilter: true,
   },
   {
+    headerName: '反写关联',
+    field: 'fxxj',
+    flex: 1,
+    filter: true,
+    floatingFilter: true,
+    editable,
+  },
+  {
     headerName: '绑定数量',
     field: 'bind_sum',
     flex: 1,
+    cellDataType: 'number',
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
   },
@@ -115,13 +128,7 @@ const czColumnDefs = ref([
     headerName: '数量/面积',
     field: 'num',
     flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '财政编码',
-    field: 'assets_code',
-    flex: 1,
+    cellDataType: 'number',
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
   },
@@ -686,6 +693,14 @@ const columnDefs = ref([
     floatingFilter: true,
     editable,
   },
+  {
+    headerName: '反写关联',
+    field: 'fxxj',
+    flex: 1,
+    filter: true,
+    floatingFilter: true,
+    editable,
+  },
   // { field: "button", cellRenderer: CustomButtonComponent },
 ]);
 
@@ -752,7 +767,7 @@ const czGridOptions = {
     const pd = gridApi.value.getSelectedRows(); // 获取选中的盘点数据
     if (pd.length === 0) {
       message.error({
-        content: '未选择匹配的盘点数据',
+        content: '绑定请勾选上方表格的数据',
       });
       return false;
     }
@@ -805,6 +820,7 @@ const czGridOptions = {
         //   columns: [changedCell], // 刷新发生变化的列
         // });
         clearSelectedRows();
+        gridApi.value.onFilterChanged();
         message.success({
           content: res.msg,
         });
@@ -870,7 +886,7 @@ const czGridOptions = {
 
 const gridOptions = {
   // 单元格单击事件
-  onCellClicked: (params: { api: any; data: any }) => {
+  onCellClicked: (params: any) => {
     // 获取图片
     imgs.data = [];
     imgs.data = params.data?.imgs.split(',');
@@ -901,13 +917,6 @@ const gridOptions = {
     if (!unbindable.value) {
       message.warn({
         content: '双击解绑，请“开启解绑功能”',
-      });
-      return false;
-    }
-
-    if (!pd.bind_code) {
-      message.warn({
-        content: '该资产还未绑定，解绑操作失败！',
       });
       return false;
     }
@@ -1010,13 +1019,39 @@ const gridOptions = {
     },
   },
 };
+
+const tenantlist = reactive({
+  data: [],
+});
+
+const reloadRowData = () => {
+  const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
+  rowData1.then((res) => {
+    rowData.value = res;
+  });
+};
+
+const reloadCzRowData = () => {
+  const rowData2 = getCzDataApi({ tenant_id: tenant_id.value });
+  rowData2.then((res) => {
+    czRowData.data = res;
+    // gridApi.value.redrawRows();
+  });
+};
+
+// 下拉选择加载表格数据
+const handleChange = () => {
+  const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
+  rowData1.then((res) => {
+    rowData.value = res;
+    // gridApi.value.redrawRows();
+  });
+};
 onMounted(() => {
-  // const rowData1 = getPandianDataApi({
-  //   tenant_id: '87627E8EFF83A13D08A8AE873EB98DW2',
-  // });
-  // rowData1.then((res) => {
-  //   rowData.value = res;
-  // });
+  const rowData1 = getTenantListDataApi();
+  rowData1.then((res: any) => {
+    tenantlist.data = res;
+  });
 });
 
 const onCellValueChanged = async (params: any) => {
@@ -1047,8 +1082,8 @@ const onCellValueChanged = async (params: any) => {
         rowNodes: [params.node], // 刷新行节点
         columns: [changedCell], // 刷新发生变化的列
       });
-      gridApi.value.stopEditing();
-      gridApi.value.getUndoRedoService().clear(); // 清空当前的撤销堆栈，防止onFilterChanged()重置后，导致撤销功能失效
+      // gridApi.value.stopEditing();
+      // gridApi.value.getUndoRedoService().clear(); // 清空当前的撤销堆栈，防止onFilterChanged()重置后，导致撤销功能失效
       gridApi.value.onFilterChanged();
     } else {
       message.error({
@@ -1058,31 +1093,6 @@ const onCellValueChanged = async (params: any) => {
   });
 };
 
-const options = reactive({
-  data: [
-    {
-      label: '重庆渝中区疾病预防控控中心',
-      value: '87627E8EFF83A13D08A8AE873EB98DW2',
-    },
-  ],
-});
-
-// 下拉选择加载表格数据
-const handleChange = () => {
-  // console.log(tenant_id)
-  // console.log(`selected ${value}`);
-  const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
-  rowData1.then((res) => {
-    rowData.value = res;
-    // gridApi.value.redrawRows();
-  });
-
-  const rowData2 = getCzDataApi({ tenant_id: tenant_id.value });
-  rowData2.then((res) => {
-    czRowData.data = res;
-    // gridApi.value.redrawRows();
-  });
-};
 const handleBlur = () => {
   // console.log('blur');
 };
@@ -1095,7 +1105,7 @@ const filterOption = (input: string, option: any) => {
 
 // const rowStyle = { background: 'black' };
 const getRowStyle = (params: any) => {
-  if (params.data.bind_code) {
+  if (params.data?.bind_code) {
     return { background: '#ffeae8' };
   }
 };
@@ -1131,6 +1141,7 @@ const caifen = () => {
   openChaifenModel.value = true;
 };
 
+const cfsl_loading = ref<boolean>(false);
 const handleChaifen = () => {
   if (chaifen_num.value <= 1) {
     message.warn({
@@ -1141,11 +1152,13 @@ const handleChaifen = () => {
   const pd = gridApi.value.getSelectedRows(); // 获取选中的盘点数据
 
   confirmLoading.value = true;
+  cfsl_loading.value = true;
   caifenPdDataApi({
     tenant_id: tenant_id.value,
     id: pd[0].id,
     chaifen_num: chaifen_num.value,
   }).then((res) => {
+    cfsl_loading.value = false;
     confirmLoading.value = false;
     if (res.code !== 0) {
       message.error({
@@ -1166,6 +1179,61 @@ const handleChaifen = () => {
     openChaifenModel.value = false;
   });
 };
+
+const fxxj_loading = ref<boolean>(false);
+// 反建盘点并自动关联
+const handlePdgl = () => {
+  const czseleted = czGridApi.value.getSelectedRows(); // 获取选中的账面数据
+  if (czseleted.length === 0) {
+    message.warn({
+      content: '请勾选需处理的账面数据',
+    });
+    czGridApi.value.deselectAll(); // 清除所有选中的行
+    return false;
+  }
+  if (czseleted.length > 1) {
+    message.warn({
+      content: '每次只能勾选处理一条数据',
+    });
+    czGridApi.value.deselectAll(); // 清除所有选中的行
+    return false;
+  }
+
+  if (czseleted[0].iscz === '否') {
+    message.warn({
+      content: '您勾选的不是账面数据',
+    });
+    czGridApi.value.deselectAll(); // 清除所有选中的行
+    return false;
+  }
+
+  fxxj_loading.value = true;
+  xjBindCzCode({
+    tenant_id: tenant_id.value,
+    czid: czseleted[0].id,
+  }).then((res) => {
+    fxxj_loading.value = false;
+    if (res.code !== 0) {
+      message.error({
+        content: res.msg,
+      });
+      return false;
+    }
+    message.success({
+      content: res.msg,
+    });
+    gridApi.value.applyTransaction({ add: [res.data.pd_row] });
+
+    const czRowNode = czGridApi.value.getRowNode(czseleted[0].id);
+    czRowNode.setData({
+      ...czRowNode.data,
+      bind_sum: res.data.bind_sum,
+      fxxj: '是',
+    });
+    czGridApi.value.deselectAll(); // 清除所有选中的行
+    czGridApi.value.onFilterChanged();
+  });
+};
 </script>
 
 <template auto-content-height>
@@ -1177,7 +1245,7 @@ const handleChaifen = () => {
       <Select
         v-model:value="tenant_id"
         :filter-option="filterOption"
-        :options="options.data"
+        :options="tenantlist.data"
         placeholder="Select a person"
         show-search
         size="small"
@@ -1186,8 +1254,18 @@ const handleChaifen = () => {
         @change="handleChange"
         @focus="handleFocus"
       />
+      <Tooltip placement="top">
+        <template #title>
+          <span> 刷新并载入 </span>
+        </template>
+        <FrameReloadRounded
+          v-if="tenant_id"
+          class="ml-2 inline-block size-6 cursor-pointer hover:text-orange-600"
+          @click="reloadRowData"
+        />
+      </Tooltip>
       <div v-if="tenant_id" class="inline-block">
-        <text class="ml-4 mr-1">筛选:</text>
+        <text class="ml-4 mr-1">盘点筛选 :</text>
         <input
           v-model="search_val"
           class="pl-2"
@@ -1206,7 +1284,14 @@ const handleChaifen = () => {
             开启表格编辑
           </Checkbox>
         </Tooltip>
-        <Button size="small" type="primary" @click="caifen"> 拆分数量 </Button>
+        <Button
+          :loading="cfsl_loading"
+          size="small"
+          type="primary"
+          @click="caifen"
+        >
+          拆分数量
+        </Button>
         <Tooltip placement="top">
           <template #title>
             <span v-if="!dzable">
@@ -1249,7 +1334,6 @@ const handleChaifen = () => {
           :get-row-id="getRowId"
           :get-row-style="getRowStyle"
           :grid-options="gridOptions"
-          :row-class-rules="rowClassRules"
           :row-data="rowData"
           :suppress-row-hover-highlight="false"
           cache-block-size="{50}"
@@ -1268,7 +1352,16 @@ const handleChaifen = () => {
       v-if="dzable"
       class="bg-card text-foreground p-2 text-sm leading-6 text-sky-500 dark:text-sky-400"
     >
-      <text class="ml-4 mr-1">筛选:</text>
+      <Tooltip placement="top">
+        <template #title>
+          <span> 刷新并载入 </span>
+        </template>
+        <FrameReloadRounded
+          class="ml-3 mr-1 inline-block size-6 cursor-pointer hover:text-orange-600"
+          @click="reloadCzRowData"
+        />
+      </Tooltip>
+      <text class="ml-2 mr-1">账面筛选 :</text>
       <input
         v-model="cz_search_val"
         class="pl-2"
@@ -1277,6 +1370,16 @@ const handleChaifen = () => {
         type="text"
         @input="onCzFilterTextBoxChanged()"
       />
+      <Button
+        :loading="fxxj_loading"
+        class="ml-4"
+        danger
+        size="small"
+        type="primary"
+        @click="handlePdgl"
+      >
+        反建盘点并关联
+      </Button>
     </div>
     <div :class="dzable ? 'dz' : 'edit'" class="flex flex-col p-4 lg:flex-row">
       <div class="card-box w-full p-2">
@@ -1288,7 +1391,6 @@ const handleChaifen = () => {
           :get-row-id="getCzRowId"
           :get-row-style="getcZRowStyle"
           :grid-options="czGridOptions"
-          :row-class-rules="rowClassRules"
           :row-data="czRowData.data"
           :suppress-row-hover-highlight="false"
           cache-block-size="{50}"
