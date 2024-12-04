@@ -670,6 +670,15 @@ importers:
       '@vueuse/core':
         specifier: 'catalog:'
         version: 11.3.0(vue@3.5.13(typescript@5.7.2))
+      ag-grid-charts-enterprise:
+        specifier: ^32.3.0
+        version: 32.3.3
+      ag-grid-enterprise:
+        specifier: ^32.3.0
+        version: 32.3.3
+      ag-grid-vue3:
+        specifier: ^32.3.0
+        version: 32.3.3(typescript@5.7.2)
       ant-design-vue:
         specifier: 'catalog:'
         version: 4.2.6(vue@3.5.13(typescript@5.7.2))
