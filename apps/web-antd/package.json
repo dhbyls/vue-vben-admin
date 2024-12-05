@@ -41,13 +41,13 @@
     "@vben/types": "workspace:*",
     "@vben/utils": "workspace:*",
     "@vueuse/core": "catalog:",
-    "ag-grid-charts-enterprise": "^32.3.0",
-    "ag-grid-enterprise": "^32.3.0",
-    "ag-grid-vue3": "^32.3.0",
+    "ag-grid-charts-enterprise": "^32.3.3",
+    "ag-grid-enterprise": "^32.3.3",
+    "ag-grid-vue3": "^32.3.3",
     "ant-design-vue": "catalog:",
     "dayjs": "catalog:",
-    "pinia": "catalog:",
-    "vue": "catalog:",
+    "pinia": "2.2.2",
+    "vue": "^3.5.13",
     "vue-router": "catalog:"
   }
 }

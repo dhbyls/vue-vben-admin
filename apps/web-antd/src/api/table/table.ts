@@ -41,6 +41,11 @@ export async function uptPandianDataApi(params: any) {
   return requestClient.post('/pandian/pd_upt', params);
 }
 
+/** 修改实财政数据 */
+export async function uptCzDataApi(params: any) {
+  return requestClient.post('/czAssets/upt', params);
+}
+
 /** 提取图片中的文字 */
 export async function getImgTextApi(params: any) {
   return requestClient.post('/pandian/get_img_text', params);

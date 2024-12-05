@@ -30,6 +30,7 @@ import {
   getPandianDataApi,
   getTenantListDataApi,
   unBindCzCode,
+  uptCzDataApi,
   uptPandianDataApi,
   xjBindCzCode,
 } from '#/api';
@@ -40,7 +41,7 @@ import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
 import 'ag-grid-charts-enterprise/styles/ag-theme-balham.min.css';
 
 const AgGridLicenseKey =
-  '[v3][Release][0102]_MTcyODA1NzY1NzgzNA==0539f79f0539aaea0368f38257ce134a';
+  '[v3][Release][0102]_MTczMTQzMDQwMzMxOQ==f8bf7989fb5027b1f0432024e4e93db4';
 LicenseManager.setLicenseKey(AgGridLicenseKey);
 
 // 主题
@@ -53,6 +54,7 @@ const agGridTheme = computed(() =>
 // 租户id
 const tenant_id = ref<string>('');
 
+const czEditable = ref(false); // 单元格编辑模式
 const editable = ref(false); // 单元格编辑模式
 const dzable = ref(false); // 对账模式
 const unbindable = ref(false); // 解绑功能
@@ -100,6 +102,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '名称',
@@ -107,6 +110,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '反写关联',
@@ -114,7 +118,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: true,
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   {
     headerName: '绑定数量',
@@ -123,6 +127,7 @@ const czColumnDefs = ref([
     cellDataType: 'number',
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '数量/面积',
@@ -131,6 +136,7 @@ const czColumnDefs = ref([
     cellDataType: 'number',
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '账面数据',
@@ -138,6 +144,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '品牌',
@@ -145,6 +152,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '规格型号',
@@ -152,6 +160,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '使用部门',
@@ -159,6 +168,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '使用人',
@@ -166,6 +176,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '存放地点',
@@ -173,34 +184,37 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
-    headerName: '管理部门',
-    field: 'glbm',
+    headerName: '原始备注',
+    field: 'remark',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
-    headerName: '管理人',
-    field: 'gluser',
+    headerName: '自定义备注',
+    field: 'custom_remark',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: czEditable,
   },
   {
-    headerName: '资产分类',
-    field: 'fenlei',
+    headerName: '取得日期',
+    field: 'date_of_acquisition',
     flex: 1,
-    filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
-    headerName: '资产门类',
-    field: 'menlei',
+    headerName: '记账日期',
+    field: 'jzrq',
     flex: 1,
-    filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '资产原值',
@@ -208,160 +222,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
-  },
-  {
-    headerName: '累计折旧/摊销(元)',
-    field: 'use_price',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '财务入账状态',
-    field: 'cwrzzt',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '记账日期',
-    field: 'jzrq',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '记账凭证号',
-    field: 'jzpzh',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '取得方式',
-    field: 'acquisition_method',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '业务状态',
-    field: 'yw_stat',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '卡片类型',
-    field: 'kp_class',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '单位会计科目',
-    field: 'union_kjkm',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '折旧/摊销年限(月)',
-    field: 'zjmonth',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '已提折旧/摊销月数',
-    field: 'ytzjmonth',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '清查编号',
-    field: 'qcbh',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '坐落位置',
-    field: 'zlwz',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '项目代码',
-    field: 'xmdm',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '采购组织形式',
-    field: 'cgzzxs',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '取得日期',
-    field: 'date_of_acquisition',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '配置标准分类',
-    field: 'pzbzfl',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '资产状态',
-    field: 'stat',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '资产用途',
-    field: 'zcyt',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '备注',
-    field: 'remark',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '价值类型',
-    field: 'jzlx',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '财政拨款(元)',
-    field: 'czbk',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-  },
-  {
-    headerName: '非财政拨款(元)',
-    field: 'fczbk',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '均价/单价(元)',
@@ -369,6 +230,191 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '管理部门',
+    field: 'glbm',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '管理人',
+    field: 'gluser',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '资产分类',
+    field: 'fenlei',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '资产门类',
+    field: 'menlei',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '累计折旧/摊销(元)',
+    field: 'use_price',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '财务入账状态',
+    field: 'cwrzzt',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '记账凭证号',
+    field: 'jzpzh',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '取得方式',
+    field: 'acquisition_method',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '业务状态',
+    field: 'yw_stat',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '卡片类型',
+    field: 'kp_class',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '单位会计科目',
+    field: 'union_kjkm',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '折旧/摊销年限(月)',
+    field: 'zjmonth',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '已提折旧/摊销月数',
+    field: 'ytzjmonth',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '清查编号',
+    field: 'qcbh',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '坐落位置',
+    field: 'zlwz',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '项目代码',
+    field: 'xmdm',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '采购组织形式',
+    field: 'cgzzxs',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '配置标准分类',
+    field: 'pzbzfl',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '资产状态',
+    field: 'stat',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '资产用途',
+    field: 'zcyt',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '价值类型',
+    field: 'jzlx',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '财政拨款(元)',
+    field: 'czbk',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '非财政拨款(元)',
+    field: 'fczbk',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '折旧/摊销状态',
@@ -376,6 +422,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '月折旧/摊销额(元)',
@@ -383,6 +430,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '净值(元)',
@@ -390,6 +438,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '使用责任主体',
@@ -397,6 +446,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '是否共享共用',
@@ -404,6 +454,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '生产厂家',
@@ -411,6 +462,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '产品序列号',
@@ -418,6 +470,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '供应商',
@@ -425,6 +478,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '采购合同编号',
@@ -432,6 +486,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '发票号',
@@ -439,6 +494,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '财务负责人',
@@ -446,6 +502,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '资产编制情况',
@@ -453,6 +510,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '车辆类型',
@@ -460,6 +518,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '车辆所有人',
@@ -467,6 +526,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '发动机号',
@@ -474,6 +534,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '车辆识别代码',
@@ -481,6 +542,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '车辆产地',
@@ -488,6 +550,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '保修截止日期',
@@ -495,6 +558,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '注册日期',
@@ -502,6 +566,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '权属性质',
@@ -509,6 +574,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '产权形式',
@@ -516,6 +582,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '权属面积',
@@ -523,6 +590,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
   {
     headerName: '使用权类型',
@@ -530,6 +598,7 @@ const czColumnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
+    editable: false,
   },
 ]);
 
@@ -632,6 +701,7 @@ const columnDefs = ref([
     field: 'production_date',
     flex: 1,
     // filter: 'agMultiColumnFilter',
+    cellEditor: 'agDateStringCellEditor',
     floatingFilter: true,
     editable,
     cellDataType: 'dateString',
@@ -749,9 +819,46 @@ const onGridReady = (params: { api: any }) => {
 //   return gridApi.value.getSelectedRows();
 // };
 
-function onCzCellValueChanged() {
-  // 当单元格值变化时，重新应用过滤器
-  czGridApi.value.onFilterChanged();
+function onCzCellValueChanged(params: any) {
+  const updatedData = params.data;
+  const req_params = {
+    id: updatedData.id,
+    field: params.colDef.field,
+    oldvalue: params.oldValue,
+    newValue: params.newValue,
+    tenant_id: tenant_id.value,
+  };
+  uptCzDataApi(req_params).then((res) => {
+    if (res.code === 0) {
+      message.success({
+        content: res.msg,
+      });
+
+      // // 当单元格值发生变化时，重绘该行
+      // const changedCell = params.colDef.field;
+      // czGridApi.value.redrawRows({
+      //   rowNodes: [params.node], // 刷新行节点
+      //   columns: [changedCell], // 刷新发生变化的列
+      // });
+      // // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
+      // czGridApi.value.refreshCells({
+      //   force: true,
+      //   suppressFlash: true,
+      //   rowNodes: [params.node], // 刷新行节点
+      //   columns: [changedCell], // 刷新发生变化的列
+      // });
+      // // czGridApi.value.stopEditing();
+      // // czGridApi.value.getUndoRedoService().clear(); // 清空当前的撤销堆栈，防止onFilterChanged()重置后，导致撤销功能失效
+      czGridApi.value.onFilterChanged();
+    } else {
+      message.error({
+        content: res.msg,
+      });
+    }
+  });
+
+  // // 当单元格值变化时，重新应用过滤器
+  // czGridApi.value.onFilterChanged();
 }
 
 const czGridOptions = {
@@ -762,7 +869,9 @@ const czGridOptions = {
   },
   // 单元格双击事件
   onCellDoubleClicked: async (params: any) => {
-    // return false;
+    if (czEditable.value) {
+      return false;
+    }
 
     const pd = gridApi.value.getSelectedRows(); // 获取选中的盘点数据
     if (pd.length === 0) {
@@ -868,10 +977,11 @@ const czGridOptions = {
   defaultColDef: {
     sortable: true,
     resizable: true,
+    editable: true,
     flex: 1,
     minWidth: 100,
     // allow every column to be aggregated
-    // enableValue: true,
+    enableValue: true,
     // allow every column to be grouped
     enableRowGroup: true,
     // allow every column to be pivoted
@@ -1054,6 +1164,7 @@ onMounted(() => {
   });
 });
 
+// 单元格变动时
 const onCellValueChanged = async (params: any) => {
   const updatedData = params.data;
   const req_params = {
@@ -1111,7 +1222,7 @@ const getRowStyle = (params: any) => {
 };
 
 const getcZRowStyle = (params: any) => {
-  if (params.data.bind_sum) {
+  if (params.data?.bind_sum) {
     return { background: '#ffeae8' };
   }
 };
@@ -1256,7 +1367,7 @@ const handlePdgl = () => {
       />
       <Tooltip placement="top">
         <template #title>
-          <span> 刷新并载入 </span>
+          <span> 刷新数据并载入 </span>
         </template>
         <FrameReloadRounded
           v-if="tenant_id"
@@ -1349,12 +1460,12 @@ const handlePdgl = () => {
 
     <!-- 以下下为财政数据 -->
     <div
-      v-if="dzable"
+      v-show="dzable"
       class="bg-card text-foreground p-2 text-sm leading-6 text-sky-500 dark:text-sky-400"
     >
       <Tooltip placement="top">
         <template #title>
-          <span> 刷新并载入 </span>
+          <span> 刷新数据并载入 </span>
         </template>
         <FrameReloadRounded
           class="ml-3 mr-1 inline-block size-6 cursor-pointer hover:text-orange-600"
@@ -1370,6 +1481,14 @@ const handlePdgl = () => {
         type="text"
         @input="onCzFilterTextBoxChanged()"
       />
+      <Tooltip placement="top">
+        <template #title>
+          <span> 开启后，可修改“自定义备注” </span>
+        </template>
+        <Checkbox v-model:checked="czEditable" class="ml-4">
+          开启表格编辑
+        </Checkbox>
+      </Tooltip>
       <Button
         :loading="fxxj_loading"
         class="ml-4"
@@ -1381,7 +1500,11 @@ const handlePdgl = () => {
         反建盘点并关联
       </Button>
     </div>
-    <div :class="dzable ? 'dz' : 'edit'" class="flex flex-col p-4 lg:flex-row">
+    <div
+      v-show="dzable"
+      :class="dzable ? 'dz' : 'edit'"
+      class="flex flex-col p-4 lg:flex-row"
+    >
       <div class="card-box w-full p-2">
         <AgGridVue
           :cell-selection="cellSelection"
