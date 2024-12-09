@@ -103,6 +103,7 @@ const czColumnDefs = ref([
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable: false,
+    cellClass: 'text-format',
   },
   {
     headerName: '名称',
@@ -618,6 +619,7 @@ const columnDefs = ref([
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable,
+    cellClass: 'text-format',
   },
   {
     headerName: '绑定编码',
@@ -626,6 +628,7 @@ const columnDefs = ref([
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable: false,
+    cellClass: 'text-format',
   },
   {
     headerName: '名称',
@@ -862,6 +865,12 @@ function onCzCellValueChanged(params: any) {
 }
 
 const czGridOptions = {
+  excelStyles: [
+    {
+      id: 'text-format',
+      dataType: 'string',
+    },
+  ],
   // 单元格单击事件
   onCellClicked: (_params: { api: any; data: any }) => {
     // 清空图片的文字
@@ -995,6 +1004,12 @@ const czGridOptions = {
 };
 
 const gridOptions = {
+  excelStyles: [
+    {
+      id: 'text-format',
+      dataType: 'string',
+    },
+  ],
   // 单元格单击事件
   onCellClicked: (params: any) => {
     // 获取图片
