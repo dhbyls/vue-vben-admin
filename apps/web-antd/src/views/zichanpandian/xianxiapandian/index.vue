@@ -2,6 +2,7 @@
 import type { List } from '#/type';
 
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
+import { hiprint } from 'vue-plugin-hiprint';
 
 import { FrameReloadRounded } from '@vben/icons';
 import { usePreferences } from '@vben/preferences';
@@ -28,6 +29,8 @@ import {
   getCzDataApi,
   getImgTextApi,
   getPandianDataApi,
+  getPrintDataSortApi,
+  getPrintTemplateApi,
   getTenantListDataApi,
   unBindCzCode,
   uptCzDataApi,
@@ -36,6 +39,7 @@ import {
 } from '#/api';
 
 import locale from '../../../../public/locale.json';
+// import template from './template';
 
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
 import 'ag-grid-charts-enterprise/styles/ag-theme-balham.min.css';
@@ -613,6 +617,15 @@ const columnDefs = ref([
     // editable: false,
   },
   {
+    headerName: '打印编码',
+    field: 'number',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+    cellClass: 'text-format',
+  },
+  {
     headerName: '盘点编码',
     field: 'assets_code',
     flex: 1,
@@ -726,12 +739,20 @@ const columnDefs = ref([
     editable,
   },
   {
+    headerName: '是否打印',
+    field: 'isprint',
+    flex: 1,
+    filter: true,
+    floatingFilter: true,
+    editable,
+  },
+  {
     headerName: '创建人',
     field: 'pd_user',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   {
     headerName: '创建时间',
@@ -740,7 +761,7 @@ const columnDefs = ref([
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     sort: 'desc',
-    editable,
+    editable: false,
   },
   {
     headerName: '更新人',
@@ -748,7 +769,7 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   {
     headerName: '最后更新时间',
@@ -756,15 +777,23 @@ const columnDefs = ref([
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   {
-    headerName: '打印标签',
-    field: 'isprint',
+    headerName: '打印时间',
+    field: 'print_time',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '打印人',
+    field: 'print_user',
     flex: 1,
     filter: true,
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   {
     headerName: '反写关联',
@@ -772,7 +801,7 @@ const columnDefs = ref([
     flex: 1,
     filter: true,
     floatingFilter: true,
-    editable,
+    editable: false,
   },
   // { field: "button", cellRenderer: CustomButtonComponent },
 ]);
@@ -1149,13 +1178,6 @@ const tenantlist = reactive({
   data: [],
 });
 
-const reloadRowData = () => {
-  const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
-  rowData1.then((res) => {
-    rowData.value = res;
-  });
-};
-
 const reloadCzRowData = () => {
   const rowData2 = getCzDataApi({ tenant_id: tenant_id.value });
   rowData2.then((res) => {
@@ -1164,6 +1186,15 @@ const reloadCzRowData = () => {
   });
 };
 
+const print_template = ref('');
+const gettemplate = () => {
+  // 获取打印模板
+  getPrintTemplateApi({ tenant_id: tenant_id.value }).then((res) => {
+    if (res.code === 0) {
+      print_template.value = res.data;
+    }
+  });
+};
 // 下拉选择加载表格数据
 const handleChange = () => {
   const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
@@ -1171,7 +1202,19 @@ const handleChange = () => {
     rowData.value = res;
     // gridApi.value.redrawRows();
   });
+
+  // 获取打印模板
+  gettemplate();
 };
+
+const reloadRowData = () => {
+  const rowData1 = getPandianDataApi({ tenant_id: tenant_id.value });
+  rowData1.then((res) => {
+    rowData.value = res;
+  });
+  gettemplate();
+};
+
 onMounted(() => {
   const rowData1 = getTenantListDataApi();
   rowData1.then((res: any) => {
@@ -1360,6 +1403,56 @@ const handlePdgl = () => {
     czGridApi.value.onFilterChanged();
   });
 };
+
+// 以下根据标签模板打印标签
+const HandlePrint = async () => {
+  if (!hiprint.hiwebSocket.opened) {
+    message.warn({
+      content: `请先连接客户端(刷新网页), 然后再点击「打印」`,
+    });
+    return false;
+  }
+  const printData = gridApi.value.getSelectedRows(); // 获取选中的盘点数据
+  if (printData.length === 0) {
+    message.warn({
+      content: '请勾选要打印的数据',
+    });
+    return false;
+  }
+
+  // 加载打印模板
+  const json = JSON.parse(print_template.value);
+  const templateRef = reactive(json);
+  const hiprintTemplate = new hiprint.PrintTemplate({
+    template: templateRef,
+  });
+
+  // 请求服务端重新排序打印
+  const dataSort = reactive({ data: [] });
+  const ids = printData.map((item: any) => item.id);
+  await getPrintDataSortApi({ ids }).then((res: any) => {
+    dataSort.data = res.data;
+  });
+
+  // 参数: 打印时设置 左偏移量，上偏移量
+  const options = { leftOffset: 0, topOffset: 0 };
+  // 扩展
+  const ext = {
+    callback: () => {
+      // console.log('浏览器打印窗口已打开');
+    },
+    // styleHandler: () => {
+    //   // 重写 文本 打印样式
+    //   return '<style>.hiprint-printElement-text{color:red !important;}</style>';
+    // },
+  };
+
+  // 直接打印
+  hiprintTemplate.print2(dataSort.data, options, ext);
+
+  // 调用浏览器打印
+  // hiprintTemplate.print(dataSort.data, options, ext);
+};
 </script>
 
 <template auto-content-height>
@@ -1390,6 +1483,7 @@ const handlePdgl = () => {
           @click="reloadRowData"
         />
       </Tooltip>
+
       <div v-if="tenant_id" class="inline-block">
         <text class="ml-4 mr-1">盘点筛选 :</text>
         <input
@@ -1448,6 +1542,17 @@ const handlePdgl = () => {
             </span>
           </Checkbox>
         </Tooltip>
+
+        <Button
+          :loading="cfsl_loading"
+          class="ml-4"
+          danger
+          size="small"
+          type="primary"
+          @click="HandlePrint"
+        >
+          打印
+        </Button>
       </div>
     </div>
     <div :class="dzable ? 'dz' : 'edit'" class="flex flex-col p-4 lg:flex-row">

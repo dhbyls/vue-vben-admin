@@ -1,15 +1,13 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive } from 'vue';
 import { defaultElementTypeProvider, hiprint } from 'vue-plugin-hiprint';
 
-import { Button, message } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
-import { getPrintTemplateApi, savePrintTemplateApi } from '#/api';
+import template from './template';
 
 // 自定义的 provider
 import TestProvider from './custom-provider';
-
-const print_template = ref('');
 
 /**
  * 构建左侧可拖拽元素
@@ -24,25 +22,9 @@ const buildLeftElement = () => {
  * 注意: 必须要在 onMounted 中去构建
  * 因为都是把元素挂载到对应容器中, 必须要先找到该容器
  */
-
-// const TEMPLATE_KEY = getCurrentInstance().type.name; // 存储模板对象的 key
-
-// const {
-//   paperTypes,
-//   curPaperType,
-//   paperPopVisible,
-//   paperWidth,
-//   paperHeight,
-//   showPaperPop,
-//   setPaper,
-//   setPaperOther,
-// } = usePaper(TEMPLATE_KEY);
-// const { scaleValue, changeScale } = useZoom(TEMPLATE_KEY);
-
 let hiprintTemplate;
+const templateRef = reactive(template); // 加载模板
 const buildDesigner = () => {
-  const json = JSON.parse(print_template.value);
-  const templateRef = reactive(json);
   $('#hiprint-printTemplate').empty(); // 先清空, 避免重复构建
   hiprintTemplate = new hiprint.PrintTemplate({
     template: templateRef,
@@ -58,24 +40,13 @@ hiprint.init({
   providers: [defaultElementTypeProvider(), new TestProvider()],
 });
 
-const gettemplate = async () => {
-  // 获取打印模板
-  await getPrintTemplateApi({}).then((res) => {
-    if (res.code === 0) {
-      print_template.value = res.data;
-      buildLeftElement();
-      buildDesigner();
-    }
-  });
-};
-
 /**
  * 这里必须要在 onMounted 中去构建 左侧可拖拽元素 或者 设计器
  * 因为都是把元素挂载到对应容器中, 必须要先找到该容器
  */
 onMounted(() => {
-  // console.log('onMounted');
-  gettemplate();
+  buildLeftElement();
+  buildDesigner();
 });
 
 /**
@@ -83,19 +54,17 @@ onMounted(() => {
  */
 const print = () => {
   // 打印数据，key 对应 元素的 字段名
-  const printData = [
-    {
-      number: '500103771761131224000054',
-      name: '办公桌',
-      user_dept: '财务部',
-      user_name: '张三',
-      addr: '14楼VOC检测实验室',
-      mode: '1200*500*750',
-      qr: '500103771761131224000054',
-    },
-  ];
+  const printData = {
+    number: 'TY2023000043',
+    assets_name: '办公桌2',
+    user_dept: '财务部',
+    user_name: '张三',
+    addr: '办公楼2-301',
+    mode: 'PC',
+  };
+
   // 参数: 打印时设置 左偏移量，上偏移量
-  const options = { leftOffset: -1, topOffset: -1 };
+  const options = { leftOffset: 0, topOffset: 0 };
   // 扩展
   const ext = {
     callback: () => {
@@ -114,77 +83,37 @@ const print = () => {
  * 注意: 需要先连接客户端
  */
 const print2 = () => {
-  const printData = [
-    {
-      number: '500103771761131224000054',
-      name: '办公桌',
-      user_dept: '财务部',
-      user_name: '张三',
-      addr: '14楼VOC检测实验室',
-      mode: '1200*500*750',
-      qr: '500103771761131224000054',
-    },
-  ];
   if (hiprint.hiwebSocket.opened) {
-    hiprintTemplate.print2(printData);
+    hiprintTemplate.print2({});
   } else {
     message.warn({
       content: `请先连接客户端(刷新网页), 然后再点击「直接打印」`,
     });
   }
 };
-
-const save_loading = ref(false);
 const showTemplate = () => {
-  save_loading.value = true;
-  const json = hiprintTemplate.getJson();
-  const jsonStr = JSON.stringify(json);
-  savePrintTemplateApi({ jsonStr }).then((res) => {
-    save_loading.value = false;
-    if (res.code !== 0) {
-      message.error({
-        content: res.msg,
-      });
-      return false;
-    }
-    message.success({
-      content: res.msg,
-    });
-  });
+  // const str = JSON.stringify(toRaw(templateRef));
+  // console.log(str);
 };
 </script>
 
 <template>
   <div class="flex flex-col">
-    <div class="mb-2 mt-2 flex flex-row justify-center">
-      <Button
-        :loading="save_loading"
-        class="mr-10"
-        size="small"
-        type="primary"
-        @click.stop="showTemplate"
-      >
-        保存模板
-      </Button>
-
-      <Button class="mr-10" danger size="small" type="text" @click.stop="print">
-        浏览器打印测试
-      </Button>
-
-      <Button
-        class="mr-10"
-        danger
-        size="small"
-        type="text"
-        @click.stop="print2"
-      >
-        直接打印测试(需要连接客户端)
-      </Button>
+    <div class="flex flex-row justify-center" style="margin-bottom: 10px">
+      <button class="circle-10" @click.stop="showTemplate">查看模板</button>
+      <button class="secondary circle-10 ml-10" @click.stop="print">
+        <i class="iconfont sv-printer"></i>
+        浏览器打印
+      </button>
+      <button class="warning circle-10 ml-10" @click.stop="print2">
+        直接打印(需要连接客户端)
+        <i class="iconfont sv-printer"></i>
+      </button>
     </div>
     <div class="flex flex-row" style="height: 87vh">
       <div class="left w-1/4">
-        <div class="flex-row flex-wrap justify-center p-5">
-          <div class="title">基础元素</div>
+        <div class="flex-row flex-wrap justify-center">
+          <div class="title">自定义标签</div>
           <div class="items">
             <div class="ep-draggable-item item" tid="defaultModule.text">
               <i class="iconfont sv-text"></i>
@@ -194,7 +123,7 @@ const showTemplate = () => {
               <i class="iconfont sv-text"></i>
               <span>资产编号</span>
             </div>
-            <div class="ep-draggable-item item" tid="defaultModule.name">
+            <div class="ep-draggable-item item" tid="defaultModule.assets_name">
               <i class="iconfont sv-text"></i>
               <span>资产名称</span>
             </div>
@@ -214,28 +143,11 @@ const showTemplate = () => {
               <i class="iconfont sv-text"></i>
               <span>使用人</span>
             </div>
-            <div class="ep-draggable-item item" tid="defaultModule.qr">
-              <i class="iconfont sv-text"></i>
-              <span>二维码</span>
-            </div>
-          </div>
-          <div class="title mt-10">辅助元素</div>
-          <div class="items">
+
+            <div class="title">辅助元素</div>
             <div class="ep-draggable-item item" tid="defaultModule.hline">
               <i class="iconfont sv-hline"></i>
               <span>横线</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.vline">
-              <i class="iconfont sv-vline"></i>
-              <span>竖线</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.rect">
-              <i class="iconfont sv-rect"></i>
-              <span>矩形</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.oval">
-              <i class="iconfont sv-oval"></i>
-              <span>圆形</span>
             </div>
           </div>
         </div>
