@@ -617,12 +617,13 @@ const columnDefs = ref([
     // editable: false,
   },
   {
-    headerName: '打印编码',
+    headerName: '编码ID',
     field: 'number',
-    flex: 1,
+    // flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable: false,
+    width: 200,
     cellClass: 'text-format',
   },
   {
@@ -739,7 +740,7 @@ const columnDefs = ref([
     editable,
   },
   {
-    headerName: '是否打印',
+    headerName: '打印需求',
     field: 'isprint',
     flex: 1,
     filter: true,
@@ -893,6 +894,9 @@ function onCzCellValueChanged(params: any) {
   // czGridApi.value.onFilterChanged();
 }
 
+const clearSelectedRows = () => {
+  gridApi.value.deselectAll(); // 清除所有选中的行
+};
 const czGridOptions = {
   excelStyles: [
     {
@@ -905,6 +909,7 @@ const czGridOptions = {
     // 清空图片的文字
     // img_text.value = '';
   },
+
   // 单元格双击事件
   onCellDoubleClicked: async (params: any) => {
     if (czEditable.value) {
@@ -918,9 +923,6 @@ const czGridOptions = {
       });
       return false;
     }
-    const clearSelectedRows = () => {
-      gridApi.value.deselectAll(); // 清除所有选中的行
-    };
     await bindCzCode({
       tenant_id: tenant_id.value,
       pd,
@@ -1404,6 +1406,7 @@ const handlePdgl = () => {
   });
 };
 
+const print_loading = ref(false);
 // 以下根据标签模板打印标签
 const HandlePrint = async () => {
   if (!hiprint.hiwebSocket.opened) {
@@ -1420,6 +1423,13 @@ const HandlePrint = async () => {
     return false;
   }
 
+  if (printData.length > 200) {
+    message.warn({
+      content: `一次最多打印200条数据，您本次勾选了${printData.length}条`,
+    });
+    return false;
+  }
+
   // 加载打印模板
   const json = JSON.parse(print_template.value);
   const templateRef = reactive(json);
@@ -1430,8 +1440,13 @@ const HandlePrint = async () => {
   // 请求服务端重新排序打印
   const dataSort = reactive({ data: [] });
   const ids = printData.map((item: any) => item.id);
+  print_loading.value = true;
   await getPrintDataSortApi({ ids }).then((res: any) => {
     dataSort.data = res.data;
+    clearSelectedRows();
+    message.success({
+      content: '正在发送打印，请稍后等待...',
+    });
   });
 
   // 参数: 打印时设置 左偏移量，上偏移量
@@ -1449,7 +1464,18 @@ const HandlePrint = async () => {
 
   // 直接打印
   hiprintTemplate.print2(dataSort.data, options, ext);
-
+  hiprintTemplate.on('printSuccess', (_data: any) => {
+    print_loading.value = false;
+    message.success({
+      content: '打印成功！',
+    });
+  });
+  hiprintTemplate.on('printError', (_data: any) => {
+    print_loading.value = false;
+    message.error({
+      content: '打印失败！',
+    });
+  });
   // 调用浏览器打印
   // hiprintTemplate.print(dataSort.data, options, ext);
 };
@@ -1544,7 +1570,7 @@ const HandlePrint = async () => {
         </Tooltip>
 
         <Button
-          :loading="cfsl_loading"
+          :loading="print_loading"
           class="ml-4"
           danger
           size="small"
@@ -1672,7 +1698,7 @@ const HandlePrint = async () => {
         <view class="absolute bottom-0 left-0 right-0">
           <Textarea
             v-model:value="img_text"
-            auto-size
+            :rows="20"
             class="text-xs"
             placeholder="图片中的文字在这里显示"
           />
