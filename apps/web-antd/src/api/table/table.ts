@@ -50,18 +50,3 @@ export async function uptCzDataApi(params: any) {
 export async function getImgTextApi(params: any) {
   return requestClient.post('/pandian/get_img_text', params);
 }
-
-export namespace DemoTableApi {
-  export interface PageFetchParams {
-    [key: string]: any;
-    page: number;
-    pageSize: number;
-  }
-}
-
-/**
- * 获取示例表格数据
- */
-export async function getExampleTableApi(params: DemoTableApi.PageFetchParams) {
-  return requestClient.get('/table/list', { params });
-}

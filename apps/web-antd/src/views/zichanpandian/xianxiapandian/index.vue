@@ -1491,7 +1491,7 @@ const HandlePrint = async () => {
         v-model:value="tenant_id"
         :filter-option="filterOption"
         :options="tenantlist.data"
-        placeholder="Select a person"
+        placeholder="点击选择"
         show-search
         size="small"
         style="width: 200px"

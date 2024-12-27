@@ -3,6 +3,11 @@ import { requestClient } from '#/api/request';
 export async function savePrintTemplateApi(params: any) {
   return requestClient.post('/PrintTemplate/save', params);
 }
+
+export async function delPrintTemplateApi(params: any) {
+  return requestClient.post('/PrintTemplate/delete', params);
+}
+
 /** 获取打印模板 */
 export async function getPrintTemplateApi(params: any) {
   return requestClient.post('/PrintTemplate/get', params);
