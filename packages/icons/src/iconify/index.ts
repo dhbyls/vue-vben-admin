@@ -15,3 +15,4 @@ export const MdiQqchat = createIconifyIcon('mdi:qqchat');
 export const FrameReloadRounded = createIconifyIcon(
   'material-symbols:frame-reload-rounded',
 );
+export const ChevronDown = createIconifyIcon('mdi-light:chevron-down');

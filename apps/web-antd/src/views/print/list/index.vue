@@ -47,21 +47,21 @@ const tenantlist = reactive({
   data: [],
 });
 
-onMounted(() => {
-  const rowData1 = getTenantListDataApi();
-  rowData1.then((res: any) => {
-    tenantlist.data = res;
-  });
-});
-
-const formOptions: VbenFormProps = {
+const formOptions = reactive<VbenFormProps>({
   // 默认展开
   collapsed: false,
   schema: [
     {
-      component: 'Input',
-      // defaultValue: '1',
-      fieldName: 'tenant_name',
+      component: 'Select',
+      componentProps: {
+        allowClear: true,
+        placeholder: '请选择单位',
+        showSearch: true,
+        optionFilterProp: 'label',
+        options: [],
+        style: 'width: 240px',
+      },
+      fieldName: 'tenant_id',
       label: '单位',
     },
   ],
@@ -71,7 +71,17 @@ const formOptions: VbenFormProps = {
   submitOnChange: false,
   // 按下回车时是否提交表单
   submitOnEnter: true,
-};
+});
+
+onMounted(() => {
+  const rowData1 = getTenantListDataApi();
+  rowData1.then((res: any) => {
+    tenantlist.data = res;
+    if (formOptions.schema && formOptions.schema[0]?.componentProps) {
+      (formOptions.schema[0].componentProps as any).options = res;
+    }
+  });
+});
 
 const gridOptions: VxeTableGridOptions<RowType> = {
   checkboxConfig: {
@@ -175,11 +185,23 @@ function openFormModal() {
   formModalApi.open();
 }
 
-const addTemplate = (row: any) => {
+const editTemplate = (row: any) => {
   formModalApi.setData({
     // 表单值
     values: { tenant_id: row.tenant_id, id: row.id },
     // a: 3,
+    title: '编辑打印模板',
+    xiala: tenantlist.data,
+  });
+  formModalApi.open();
+};
+
+const addTemplate = () => {
+  formModalApi.setData({
+    // 表单值
+    // values: { tenant_id: row.tenant_id, id: row.id },
+    // a: 3,
+    title: '新增设计模板',
     xiala: tenantlist.data,
   });
   formModalApi.open();
@@ -201,6 +223,21 @@ const handleSave = (formData: any) => {
     message.warn({
       content: res.msg,
     });
+  });
+};
+
+const copyTemplate = (row: any) => {
+  savePrintTemplateApi({
+    id: row.id,
+    copy: true,
+  }).then((res: any) => {
+    if (res.code === 0) {
+      message.success({
+        content: res.msg,
+      });
+      gridApi.query();
+      return false;
+    }
   });
 };
 </script>
@@ -229,8 +266,7 @@ const handleSave = (formData: any) => {
         >
           <Button danger type="link">删除</Button>
         </Popconfirm>
-        <Button type="link" @click="addTemplate(row)">编辑</Button>
-        <!-- <Button type="link" @click="openFormModal()">设计模板</Button> -->
+        <Button type="link" @click="editTemplate(row)">编辑</Button>
         <Dropdown>
           <a class="ant-dropdown-link" @click.prevent>
             更多
@@ -239,7 +275,7 @@ const handleSave = (formData: any) => {
           <template #overlay>
             <Menu>
               <MenuItem>
-                <a href="javascript:;" @click="openFormModal()">拷贝模板</a>
+                <a href="javascript:;" @click="copyTemplate(row)">拷贝模板</a>
               </MenuItem>
               <MenuItem>
                 <a href="javascript:;" @click="openFormModal()">设计模板</a>
@@ -249,11 +285,7 @@ const handleSave = (formData: any) => {
         </Dropdown>
       </template>
       <template #toolbar-tools>
-        <Button
-          class="mr-2"
-          type="primary"
-          @click="addTemplate({ tenant_id: '', id: '' })"
-        >
+        <Button class="mr-2" type="primary" @click="addTemplate">
           新增打印模板
         </Button>
       </template>

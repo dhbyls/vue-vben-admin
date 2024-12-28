@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { ref } from 'vue';
+
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
@@ -44,6 +46,8 @@ function onSubmit(values: Record<string, any>) {
   emit('submit', values);
 }
 
+const model_title = ref('新增打印模板');
+
 const [Modal, modalApi] = useVbenModal({
   fullscreenButton: false,
   onCancel() {
@@ -55,8 +59,9 @@ const [Modal, modalApi] = useVbenModal({
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
-      const { values, xiala } = modalApi.getData<Record<string, any>>();
-
+      const { values, xiala, title } = modalApi.getData<Record<string, any>>();
+      model_title.value = title;
+      // formApi.setState({ title });
       if (values) {
         formApi.setValues(values);
       }
@@ -81,7 +86,7 @@ const [Modal, modalApi] = useVbenModal({
       ]);
     }
   },
-  title: '新增打印模板',
+  title: model_title,
   // closeOnClickModal: false,
   draggable: true,
 });
