@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, useSlots } from 'vue';
+import type { SetupContext } from 'vue';
 
 import { VbenTooltip } from '@vben-core/shadcn-ui';
-
 import { Code } from 'lucide-vue-next';
 import {
   TabsContent,
@@ -11,6 +10,7 @@ import {
   TabsRoot,
   TabsTrigger,
 } from 'radix-vue';
+import { computed, ref, useSlots } from 'vue';
 
 defineOptions({
   inheritAttrs: false,
@@ -25,7 +25,7 @@ const props = withDefaults(
 
 const open = ref(false);
 
-const slots = useSlots();
+const slots: SetupContext['slots'] = useSlots();
 
 const tabs = computed(() => {
   return props.files.map((file) => {

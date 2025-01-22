@@ -1,10 +1,8 @@
 <script lang="ts" setup>
-import { Page } from '@vben/common-ui';
-
-import { NButton, NCard, useMessage } from 'naive-ui';
-
 import { useVbenForm } from '#/adapter/form';
 import { getAllMenusApi } from '#/api';
+import { Page } from '@vben/common-ui';
+import { NButton, NCard, useMessage } from 'naive-ui';
 
 const message = useMessage();
 const [Form, formApi] = useVbenForm({
@@ -40,6 +38,7 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'api',
       // 界面显示的label
       label: 'ApiSelect',
+      rules: 'required',
     },
     {
       component: 'ApiTreeSelect',
@@ -56,16 +55,19 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'apiTree',
       // 界面显示的label
       label: 'ApiTreeSelect',
+      rules: 'required',
     },
     {
       component: 'Input',
       fieldName: 'string',
       label: 'String',
+      rules: 'required',
     },
     {
       component: 'InputNumber',
       fieldName: 'number',
       label: 'Number',
+      rules: 'required',
     },
     {
       component: 'RadioGroup',
@@ -80,6 +82,7 @@ const [Form, formApi] = useVbenForm({
           { value: 'E', label: 'E' },
         ],
       },
+      rules: 'selectRequired',
     },
     {
       component: 'RadioGroup',
@@ -94,9 +97,9 @@ const [Form, formApi] = useVbenForm({
           { value: 'C', label: '选项C' },
           { value: 'D', label: '选项D' },
           { value: 'E', label: '选项E' },
-          { value: 'F', label: '选项F' },
         ],
       },
+      rules: 'selectRequired',
     },
     {
       component: 'CheckboxGroup',
@@ -109,11 +112,22 @@ const [Form, formApi] = useVbenForm({
           { value: 'C', label: '选项C' },
         ],
       },
+      rules: 'selectRequired',
     },
     {
       component: 'DatePicker',
       fieldName: 'date',
       label: 'Date',
+      rules: 'required',
+    },
+    {
+      component: 'Input',
+      fieldName: 'textArea',
+      label: 'TextArea',
+      componentProps: {
+        type: 'textarea',
+      },
+      rules: 'required',
     },
   ],
 });

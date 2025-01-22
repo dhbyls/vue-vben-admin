@@ -1,11 +1,13 @@
 <script lang="ts" setup>
 import { useVbenDrawer } from '@vben/common-ui';
-
 import { message } from 'ant-design-vue';
 
 const [Drawer, drawerApi] = useVbenDrawer({
   onCancel() {
     drawerApi.close();
+  },
+  onClosed() {
+    drawerApi.setState({ overlayBlur: 0, placement: 'right' });
   },
   onConfirm() {
     message.info('onConfirm');

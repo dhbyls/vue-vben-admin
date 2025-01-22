@@ -1,17 +1,11 @@
 <script lang="ts" setup>
-import { useVbenModal } from '@vben/common-ui';
-
-import { message } from 'ant-design-vue';
-
 import { useVbenForm } from '#/adapter/form';
+import { useVbenModal } from '@vben/common-ui';
+import { message } from 'ant-design-vue';
 
 defineOptions({
   name: 'FormModelDemo',
 });
-
-function onSubmit(values: Record<string, any>) {
-  message.info(JSON.stringify(values)); // 只会执行一次
-}
 
 const [Form, formApi] = useVbenForm({
   handleSubmit: onSubmit,
@@ -70,6 +64,23 @@ const [Modal, modalApi] = useVbenModal({
   },
   title: '内嵌表单示例',
 });
+
+function onSubmit(values: Record<string, any>) {
+  message.loading({
+    content: '正在提交中...',
+    duration: 0,
+    key: 'is-form-submitting',
+  });
+  modalApi.lock();
+  setTimeout(() => {
+    modalApi.close();
+    message.success({
+      content: `提交成功：${JSON.stringify(values)}`,
+      duration: 2,
+      key: 'is-form-submitting',
+    });
+  }, 3000);
+}
 </script>
 <template>
   <Modal>

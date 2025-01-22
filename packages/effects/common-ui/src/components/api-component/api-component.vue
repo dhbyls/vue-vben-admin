@@ -1,12 +1,11 @@
 <script lang="ts" setup>
 import type { AnyPromiseFunction } from '@vben/types';
-
-import { type Component, computed, ref, unref, useAttrs, watch } from 'vue';
+import type { Component } from 'vue';
 
 import { LoaderCircle } from '@vben/icons';
 import { get, isEqual, isFunction } from '@vben-core/shared/utils';
-
 import { objectOmit } from '@vueuse/core';
+import { computed, ref, unref, useAttrs, watch } from 'vue';
 
 type OptionsItem = {
   [name: string]: any;
@@ -118,7 +117,7 @@ const bindProps = computed(() => {
     [`onUpdate:${props.modelPropName}`]: (val: string) => {
       modelValue.value = val;
     },
-    ...objectOmit(attrs, ['onUpdate:value']),
+    ...objectOmit(attrs, [`onUpdate:${props.modelPropName}`]),
     ...(props.visibleEvent
       ? {
           [props.visibleEvent]: handleFetchForVisible,
@@ -188,18 +187,16 @@ function emitChange() {
 }
 </script>
 <template>
-  <div v-bind="{ ...$attrs }">
-    <component
-      :is="component"
-      v-bind="bindProps"
-      :placeholder="$attrs.placeholder"
-    >
-      <template v-for="item in Object.keys($slots)" #[item]="data">
-        <slot :name="item" v-bind="data || {}"></slot>
-      </template>
-      <template v-if="loadingSlot && loading" #[loadingSlot]>
-        <LoaderCircle class="animate-spin" />
-      </template>
-    </component>
-  </div>
+  <component
+    :is="component"
+    v-bind="bindProps"
+    :placeholder="$attrs.placeholder"
+  >
+    <template v-for="item in Object.keys($slots)" #[item]="data">
+      <slot :name="item" v-bind="data || {}"></slot>
+    </template>
+    <template v-if="loadingSlot && loading" #[loadingSlot]>
+      <LoaderCircle class="animate-spin" />
+    </template>
+  </component>
 </template>
