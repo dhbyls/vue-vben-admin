@@ -19,22 +19,22 @@ onMounted(() => {
     radar: {
       indicator: [
         {
-          name: '网页',
+          name: '在用',
         },
         {
-          name: '移动端',
+          name: '维修',
         },
         {
-          name: 'Ipad',
+          name: '闲置',
         },
         {
-          name: '客户端',
+          name: '外借',
         },
         {
-          name: '第三方',
+          name: '报废',
         },
         {
-          name: '其它',
+          name: '其他',
         },
       ],
       radius: '60%',

@@ -3,6 +3,7 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeTableGridOptions } from '#/adapter/vxe-table';
 
 import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { Page, useVbenModal } from '@vben/common-ui';
 import { ChevronDown } from '@vben/icons';
@@ -38,11 +39,10 @@ interface RowType {
   jsonstr: string;
   tenant_id: string;
   uid: string;
-  default: boolean;
+  isdefault: boolean;
   last_upt_user: string;
   last_upt_time: string;
 }
-
 const tenantlist = reactive({
   data: [],
 });
@@ -104,7 +104,7 @@ const gridOptions: VxeTableGridOptions<RowType> = {
       width: 100,
     },
     {
-      field: 'default',
+      field: 'isdefault',
       slots: { default: 'open' },
       title: '默认打印',
       width: 100,
@@ -177,13 +177,13 @@ const delRowEvent = (row: RowType) => {
   });
 };
 
-function openFormModal() {
-  formModalApi.setData({
-    // 表单值
-    values: { field1: 'abc' },
-  });
-  formModalApi.open();
-}
+// function openFormModal() {
+//   formModalApi.setData({
+//     // 表单值
+//     values: { field1: 'abc' },
+//   });
+//   formModalApi.open();
+// }
 
 const editTemplate = (row: any) => {
   formModalApi.setData({
@@ -210,13 +210,15 @@ const addTemplate = () => {
 const switch_loadding = ref(false);
 const handleSave = (formData: any) => {
   switch_loadding.value = true;
-  savePrintTemplateApi(formData).then((res: any) => {
+  const { id, tenant_id, isdefault } = formData;
+  savePrintTemplateApi({ id, tenant_id, isdefault }).then((res: any) => {
     switch_loadding.value = false;
+
+    gridApi.query();
     if (res.code === 0) {
       message.success({
         content: res.msg,
       });
-      gridApi.query();
       formModalApi.close();
       return false;
     }
@@ -240,6 +242,22 @@ const copyTemplate = (row: any) => {
     }
   });
 };
+const router = useRouter();
+// 设计模版
+const designTemplate = (row: any) => {
+  // window.open(`/print/design`);
+  // const iframeUrl = 'https://example.com/page?param=value';
+  // router.push({ path: '/print/design', query: { url: iframeUrl } });
+  // openWindow('/print/design');
+  router
+    .push({
+      path: '/print/design',
+      query: { template_id: row.id, tenant_name: row.tenant_name },
+    })
+    .catch((error) => {
+      console.error('Navigation failed:', error);
+    });
+};
 </script>
 
 <template>
@@ -247,12 +265,12 @@ const copyTemplate = (row: any) => {
     <Grid>
       <template #image-url="{ row }">
         <template v-if="row.thumb">
-          <Image :src="row.thumb" height="30" width="30" />
+          <Image :src="row.thumb" />
         </template>
       </template>
       <template #open="{ row }">
         <Switch
-          v-model:checked="row.default"
+          v-model:checked="row.isdefault"
           :loading="switch_loadding"
           @change="handleSave(row)"
         />
@@ -270,7 +288,7 @@ const copyTemplate = (row: any) => {
         <Dropdown>
           <a class="ant-dropdown-link" @click.prevent>
             更多
-            <ChevronDown class="inline-block size-6 cursor-pointer" />
+            <ChevronDown class="inline-block size-4 cursor-pointer" />
           </a>
           <template #overlay>
             <Menu>
@@ -278,7 +296,7 @@ const copyTemplate = (row: any) => {
                 <a href="javascript:;" @click="copyTemplate(row)">拷贝模板</a>
               </MenuItem>
               <MenuItem>
-                <a href="javascript:;" @click="openFormModal()">设计模板</a>
+                <a href="javascript:;" @click="designTemplate(row)">设计模板</a>
               </MenuItem>
             </Menu>
           </template>

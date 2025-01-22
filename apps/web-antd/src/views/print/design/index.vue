@@ -1,15 +1,36 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { defaultElementTypeProvider, hiprint } from 'vue-plugin-hiprint';
+import { useRoute, useRouter } from 'vue-router';
 
-import { Button, message } from 'ant-design-vue';
+import { ChevronDown } from '@vben/icons';
 
-import { getPrintTemplateApi, savePrintTemplateApi } from '#/api';
+import {
+  Button,
+  Dropdown,
+  InputNumber,
+  Menu,
+  MenuItem,
+  message,
+} from 'ant-design-vue';
 
-// 自定义的 provider
+import {
+  getPrintProviderApi,
+  getPrintTemplateApi,
+  savePrintTemplateApi,
+} from '#/api';
+
 import TestProvider from './custom-provider';
+// 自定义的 provider
 
+const template_id = ref('');
 const print_template = ref('');
+const route = useRoute();
+const router = useRouter();
+const paperSize = ref({ width: 0, height: 0 });
+const tenant_name = ref('');
+
+const customProvider = reactive({ data: [] });
 
 /**
  * 构建左侧可拖拽元素
@@ -42,6 +63,11 @@ const buildLeftElement = () => {
 let hiprintTemplate;
 const buildDesigner = () => {
   const json = JSON.parse(print_template.value);
+  // console.log('json', json.panels[0].width, json.panels[0].height);
+  paperSize.value = {
+    width: json.panels[0].width,
+    height: json.panels[0].height,
+  };
   const templateRef = reactive(json);
   $('#hiprint-printTemplate').empty(); // 先清空, 避免重复构建
   hiprintTemplate = new hiprint.PrintTemplate({
@@ -53,14 +79,74 @@ const buildDesigner = () => {
   hiprintTemplate.design('#hiprint-printTemplate');
 };
 
-// 初始化 provider
-hiprint.init({
-  providers: [defaultElementTypeProvider(), new TestProvider()],
-});
+// const buildProvider = (data, clear) => {
+//   // 组装 provider
+//   if (Array.isArray(data)) {
+//     // 如果返回的是数组
+//     const providerList = helper.createProviderList(data);
+//     hiprint.init({ providers: providerList });
+//   } else {
+//     const provider = helper.createProvider(data.key, data.options);
+//     hiprint.init({ providers: [provider] });
+//   }
+//   if (clear) {
+//     $('#provider-container').empty(); // 先清空, 避免重复构建
+//   }
+//   if (Array.isArray(data)) {
+//     // 数组就循环去构建
+//     data.forEach((item) =>
+//       hiprint.PrintElementTypeManager.build($('#provider-container'), item.key),
+//     );
+//   } else {
+//     hiprint.PrintElementTypeManager.build($('#provider-container'), data.key);
+//   }
+// };
+
+// 加载provider
+// const getProvider1 = async (clear = true) => {
+//   message.loading({
+//     content: '正在加载模板...',
+//     key: 'loadTemplate',
+//     duration: 0,
+//   });
+//   await getPrintProviderApi2({ template_id: template_id.value }).then((res) => {
+//     message.destroy('loadTemplate');
+//     if (res.code === 0) {
+//       buildProvider(res.data, clear);
+//     }
+//   });
+// };
 
 const gettemplate = async () => {
+  message.loading({
+    content: '正在加载模板...',
+    key: 'loadTemplate',
+    duration: 0,
+  });
+
+  // 加载provider;
+  await getPrintProviderApi({ template_id: template_id.value }).then((res) => {
+    message.destroy('loadTemplate');
+    if (res.code === 0) {
+      customProvider.data = res.data;
+      // 初始化 provider
+      hiprint.init({
+        providers: [
+          defaultElementTypeProvider(),
+          new TestProvider(customProvider.data),
+        ],
+      });
+    }
+  });
+
+  // // 获取provider; // 这个需要写自定义样式
+  // hiprint.init({
+  //   providers: [],
+  // });
+  // getProvider1();
+
   // 获取打印模板
-  await getPrintTemplateApi({}).then((res) => {
+  await getPrintTemplateApi({ template_id: template_id.value }).then((res) => {
     if (res.code === 0) {
       print_template.value = res.data;
       buildLeftElement();
@@ -73,9 +159,11 @@ const gettemplate = async () => {
  * 这里必须要在 onMounted 中去构建 左侧可拖拽元素 或者 设计器
  * 因为都是把元素挂载到对应容器中, 必须要先找到该容器
  */
-onMounted(() => {
+onMounted(async () => {
   // console.log('onMounted');
-  gettemplate();
+  template_id.value = route.query.template_id;
+  tenant_name.value = route.query.tenant_name;
+  await gettemplate();
 });
 
 /**
@@ -92,6 +180,7 @@ const print = () => {
       addr: '14楼VOC检测实验室',
       mode: '1200*500*750',
       qr: '500103771761131224000054',
+      print_time: '2023-01-01 00:00',
     },
   ];
   // 参数: 打印时设置 左偏移量，上偏移量
@@ -123,6 +212,7 @@ const print2 = () => {
       addr: '14楼VOC检测实验室',
       mode: '1200*500*750',
       qr: '500103771761131224000054',
+      print_time: '2023-01-01 00:00',
     },
   ];
   if (hiprint.hiwebSocket.opened) {
@@ -134,12 +224,13 @@ const print2 = () => {
   }
 };
 
+// 保存模板
 const save_loading = ref(false);
-const showTemplate = () => {
+const saveTemplate = () => {
   save_loading.value = true;
   const json = hiprintTemplate.getJson();
-  const jsonStr = JSON.stringify(json);
-  savePrintTemplateApi({ jsonStr }).then((res) => {
+  const jsonstr = JSON.stringify(json);
+  savePrintTemplateApi({ jsonstr, id: template_id.value }).then((res) => {
     save_loading.value = false;
     if (res.code !== 0) {
       message.error({
@@ -150,91 +241,183 @@ const showTemplate = () => {
     message.success({
       content: res.msg,
     });
+    // setTimeout(() => {
+    //   router.go(-1);
+    // }, 2000);
   });
+};
+
+const scaleValue = ref(1);
+const state = reactive({
+  scaleMin: 0.5,
+  scaleMax: 5,
+});
+// 缩放
+const changeScale = (big) => {
+  if (big) {
+    scaleValue.value += 0.1;
+    if (scaleValue.value > state.scaleMax) scaleValue.value = 5;
+  } else {
+    scaleValue.value -= 0.1;
+    if (scaleValue.value < state.scaleMin) scaleValue.value = 0.5;
+  }
+  hiprintTemplate.zoom(scaleValue.value);
+};
+
+const paperTypes = reactive({
+  '60*40': {
+    width: 60,
+    height: 40,
+  },
+  '70*30': {
+    width: 70,
+    height: 30,
+  },
+  A3: {
+    width: 420,
+    height: 296.6,
+  },
+  A4: {
+    width: 210,
+    height: 296.6,
+  },
+  A5: {
+    width: 210,
+    height: 147.6,
+  },
+  B3: {
+    width: 500,
+    height: 352.6,
+  },
+  B4: {
+    width: 250,
+    height: 352.6,
+  },
+  B5: {
+    width: 250,
+    height: 175.6,
+  },
+});
+
+// 缩放纸张大小
+const changePaperZoom = (bool) => {
+  // hiprintTemplate.setPaper(210, 297);
+  changeScale(bool);
+};
+
+const choosePagerSize = (index) => {
+  const size = paperTypes[index];
+  hiprintTemplate.setPaper(size.width, size.height);
+  paperSize.value.width = size.width;
+  paperSize.value.height = size.height;
+};
+const setkPaperSize = () => {
+  hiprintTemplate.setPaper(paperSize.value.width, paperSize.value.height);
+};
+
+// 后退
+const goback = () => {
+  router.go(-1);
 };
 </script>
 
 <template>
   <div class="flex flex-col">
     <div class="mb-2 mt-2 flex flex-row justify-center">
+      <Button class="mr-5" size="small" type="dashed" @click.stop="goback">
+        返回
+      </Button>
+      <div class="mr-5">
+        <Dropdown>
+          <a class="ant-dropdown-link" @click.prevent>
+            <span>设计尺寸(mm):</span>
+            <ChevronDown class="inline-block size-6 cursor-pointer" />
+          </a>
+          <template #overlay>
+            <Menu>
+              <MenuItem v-for="(row, index) in paperTypes" :key="index">
+                <a href="javascript:;" @click="choosePagerSize(index)">{{
+                  index
+                }}</a>
+              </MenuItem>
+            </Menu>
+          </template>
+        </Dropdown>
+        <InputNumber
+          v-model:value="paperSize.width"
+          :max="1000"
+          :min="1"
+          size="small"
+          @change="setkPaperSize"
+        />
+        X
+        <InputNumber
+          v-model:value="paperSize.height"
+          :max="1000"
+          :min="1"
+          size="small"
+          @change="setkPaperSize"
+        />
+      </div>
+      <div>
+        <Button class="mr-1" size="small" @click.stop="changePaperZoom(false)">
+          -缩小
+        </Button>
+        <Button class="mr-5" size="small" @click.stop="changePaperZoom(true)">
+          +放大
+        </Button>
+      </div>
+
       <Button
         :loading="save_loading"
-        class="mr-10"
+        class="mr-5"
         size="small"
         type="primary"
-        @click.stop="showTemplate"
+        @click.stop="saveTemplate"
       >
         保存模板
       </Button>
 
-      <Button class="mr-10" danger size="small" type="text" @click.stop="print">
-        浏览器打印测试
+      <Button class="mr-5" danger size="small" type="text" @click.stop="print">
+        打印预览
       </Button>
 
-      <Button
-        class="mr-10"
-        danger
-        size="small"
-        type="text"
-        @click.stop="print2"
-      >
+      <Button class="mr-5" danger size="small" type="text" @click.stop="print2">
         直接打印测试(需要连接客户端)
       </Button>
     </div>
     <div class="flex flex-row" style="height: 87vh">
-      <div class="left w-1/4">
-        <div class="flex-row flex-wrap justify-center p-5">
+      <div class="left postion w-1/4">
+        <view class="absolute left-5 top-12 bg-red-400 px-2 text-white">
+          {{ tenant_name }}
+        </view>
+        <div
+          id="provider-container"
+          class="flex-row flex-wrap justify-center p-5"
+        >
           <div class="title">基础元素</div>
-          <div class="items">
-            <div class="ep-draggable-item item" tid="defaultModule.text">
-              <i class="iconfont sv-text"></i>
-              <span>标签</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.number">
-              <i class="iconfont sv-text"></i>
-              <span>资产编号</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.name">
-              <i class="iconfont sv-text"></i>
-              <span>资产名称</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.mode">
-              <i class="iconfont sv-text"></i>
-              <span>规格型号</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.addr">
-              <i class="iconfont sv-text"></i>
-              <span>存放地点</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.user_dept">
-              <i class="iconfont sv-text"></i>
-              <span>使用部门</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.user_name">
-              <i class="iconfont sv-text"></i>
-              <span>使用人</span>
-            </div>
-            <div class="ep-draggable-item item" tid="defaultModule.qr">
-              <i class="iconfont sv-text"></i>
-              <span>二维码</span>
+          <div v-if="customProvider.data" class="items">
+            <div
+              v-for="(item, index) in customProvider.data"
+              :key="index"
+              :tid="item.tid"
+              class="ep-draggable-item item"
+            >
+              <span>{{ item?.options.title }}</span>
             </div>
           </div>
           <div class="title mt-10">辅助元素</div>
           <div class="items">
             <div class="ep-draggable-item item" tid="defaultModule.hline">
-              <i class="iconfont sv-hline"></i>
               <span>横线</span>
             </div>
             <div class="ep-draggable-item item" tid="defaultModule.vline">
-              <i class="iconfont sv-vline"></i>
               <span>竖线</span>
             </div>
             <div class="ep-draggable-item item" tid="defaultModule.rect">
-              <i class="iconfont sv-rect"></i>
               <span>矩形</span>
             </div>
             <div class="ep-draggable-item item" tid="defaultModule.oval">
-              <i class="iconfont sv-oval"></i>
               <span>圆形</span>
             </div>
           </div>
@@ -257,6 +440,10 @@ const showTemplate = () => {
 .hiprint-headerLine,
 .hiprint-footerLine {
   border-color: purple !important;
+}
+
+.hiprint-printElement.design .del-btn {
+  visibility: hidden !important;
 }
 
 .hiprint-headerLine:hover,

@@ -7,15 +7,9 @@ import {
   AnalysisChartsTabs,
   AnalysisOverview,
 } from '@vben/common-ui';
-import {
-  SvgBellIcon,
-  SvgCakeIcon,
-  SvgCardIcon,
-  SvgDownloadIcon,
-} from '@vben/icons';
+import { SvgCakeIcon, SvgCardIcon } from '@vben/icons';
 
 import AnalyticsTrends from './analytics-trends.vue';
-import AnalyticsVisits from './analytics-visits.vue';
 import AnalyticsVisitsData from './analytics-visits-data.vue';
 import AnalyticsVisitsSales from './analytics-visits-sales.vue';
 import AnalyticsVisitsSource from './analytics-visits-source.vue';
@@ -23,43 +17,43 @@ import AnalyticsVisitsSource from './analytics-visits-source.vue';
 const overviewItems: AnalysisOverviewItem[] = [
   {
     icon: SvgCardIcon,
-    title: '用户量',
-    totalTitle: '总用户量',
+    title: '我的资产',
+    totalTitle: '资产总数',
     totalValue: 120_000,
-    value: 2000,
+    value: 100,
   },
   {
     icon: SvgCakeIcon,
-    title: '访问量',
-    totalTitle: '总访问量',
-    totalValue: 500_000,
-    value: 20_000,
+    title: '我的分类',
+    totalTitle: '总分类',
+    totalValue: 5,
+    value: 2,
   },
   {
-    icon: SvgDownloadIcon,
-    title: '下载量',
-    totalTitle: '总下载量',
-    totalValue: 120_000,
-    value: 8000,
+    icon: SvgCardIcon,
+    title: '盘亏',
+    totalTitle: '盘亏（总）',
+    totalValue: 100,
+    value: 2,
   },
   {
-    icon: SvgBellIcon,
-    title: '使用量',
-    totalTitle: '总使用量',
-    totalValue: 50_000,
-    value: 5000,
+    icon: SvgCardIcon,
+    title: '盘盈',
+    totalTitle: '盘盈（总）',
+    totalValue: 4,
+    value: 302,
   },
 ];
 
 const chartTabs: TabOption[] = [
   {
-    label: '流量趋势',
+    label: '资产新增趋势',
     value: 'trends',
   },
-  {
-    label: '月访问量',
-    value: 'visits',
-  },
+  // {
+  //   label: '资产报废',
+  //   value: 'visits',
+  // },
 ];
 </script>
 
@@ -70,19 +64,19 @@ const chartTabs: TabOption[] = [
       <template #trends>
         <AnalyticsTrends />
       </template>
-      <template #visits>
+      <!-- <template #visits>
         <AnalyticsVisits />
-      </template>
+      </template> -->
     </AnalysisChartsTabs>
 
     <div class="mt-5 w-full md:flex">
-      <AnalysisChartCard class="mt-5 md:mr-4 md:mt-0 md:w-1/3" title="访问数量">
+      <AnalysisChartCard class="mt-5 md:mr-4 md:mt-0 md:w-1/3" title="资产状态">
         <AnalyticsVisitsData />
       </AnalysisChartCard>
-      <AnalysisChartCard class="mt-5 md:mr-4 md:mt-0 md:w-1/3" title="访问来源">
+      <AnalysisChartCard class="mt-5 md:mr-4 md:mt-0 md:w-1/3" title="部门分布">
         <AnalyticsVisitsSource />
       </AnalysisChartCard>
-      <AnalysisChartCard class="mt-5 md:mt-0 md:w-1/3" title="访问来源">
+      <AnalysisChartCard class="mt-5 md:mt-0 md:w-1/3" title="类别分布">
         <AnalyticsVisitsSales />
       </AnalysisChartCard>
     </div>
