@@ -4,19 +4,21 @@ import type {
   ExtendedDrawerApi,
 } from './drawer';
 
-import { useStore } from '@vben-core/shared/store';
 import {
   defineComponent,
   h,
   inject,
   nextTick,
+  onDeactivated,
   provide,
   reactive,
   ref,
 } from 'vue';
 
-import VbenDrawer from './drawer.vue';
+import { useStore } from '@vben-core/shared/store';
+
 import { DrawerApi } from './drawer-api';
+import VbenDrawer from './drawer.vue';
 
 const USER_DRAWER_INJECT_KEY = Symbol('VBEN_DRAWER_INJECT');
 
@@ -63,11 +65,20 @@ export function useVbenDrawer<
             slots,
           );
       },
+      // eslint-disable-next-line vue/one-component-per-file
       {
-        inheritAttrs: false,
         name: 'VbenParentDrawer',
+        inheritAttrs: false,
       },
     );
+
+    /**
+     * 在开启keepAlive情况下 直接通过浏览器按钮/手势等返回 不会关闭弹窗
+     */
+    onDeactivated(() => {
+      (extendedApi as ExtendedDrawerApi)?.close?.();
+    });
+
     return [Drawer, extendedApi as ExtendedDrawerApi] as const;
   }
 
@@ -104,9 +115,10 @@ export function useVbenDrawer<
       return () =>
         h(VbenDrawer, { ...props, ...attrs, drawerApi: extendedApi }, slots);
     },
+    // eslint-disable-next-line vue/one-component-per-file
     {
-      inheritAttrs: false,
       name: 'VbenDrawer',
+      inheritAttrs: false,
     },
   );
   injectData.extendApi?.(extendedApi);

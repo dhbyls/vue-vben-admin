@@ -114,8 +114,6 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
 ```ts
 const dashboardMenus = [
   {
-    // 这里固定写死 BasicLayout，不可更改
-    component: 'BasicLayout',
     meta: {
       order: -1,
       title: 'page.dashboard.title',
@@ -143,6 +141,16 @@ const dashboardMenus = [
         },
       },
     ],
+  },
+  {
+    name: 'Test',
+    path: '/test',
+    component: '/test/index',
+    meta: {
+      title: 'page.test',
+      // 部分特殊页面如果不需要基础布局（页面顶部和侧边栏），可将noBasicLayout设置为true
+      noBasicLayout: true,
+    },
   },
 ];
 ```
@@ -296,7 +304,7 @@ const { hasAccessByRoles } = useAccess();
 
 #### 指令方式
 
-> 指令支持绑定单个或多个权限码。单个时可以直接传入字符串或数组中包含一个权限码，多个权限码则传入数组。
+> 指令支持绑定单个或多个角色。单个时可以直接传入字符串或数组中包含一个角色，多个角色均可访问则传入数组。
 
 ```vue
 <template>

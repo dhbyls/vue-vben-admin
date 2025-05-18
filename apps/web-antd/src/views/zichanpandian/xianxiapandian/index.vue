@@ -39,6 +39,8 @@ import {
 } from '#/api';
 
 import locale from '../../../../public/locale.json';
+
+import 'ag-grid-enterprise';
 // import template from './template';
 
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';

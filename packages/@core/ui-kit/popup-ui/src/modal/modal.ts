@@ -1,5 +1,6 @@
-import type { MaybePromise } from '@vben-core/typings';
 import type { Component, Ref } from 'vue';
+
+import type { MaybePromise } from '@vben-core/typings';
 
 import type { ModalApi } from './modal-api';
 
@@ -59,6 +60,10 @@ export interface ModalProps {
    * 弹窗描述
    */
   description?: string;
+  /**
+   * 在关闭时销毁弹窗
+   */
+  destroyOnClose?: boolean;
   /**
    * 是否可拖拽
    * @default false
@@ -141,21 +146,17 @@ export interface ModalState extends ModalProps {
   sharedData?: Record<string, any>;
 }
 
-export type ExtendedModalApi = {
+export type ExtendedModalApi = ModalApi & {
   useStore: <T = NoInfer<ModalState>>(
     selector?: (state: NoInfer<ModalState>) => T,
   ) => Readonly<Ref<T>>;
-} & ModalApi;
+};
 
 export interface ModalApiOptions extends ModalState {
   /**
    * 独立的弹窗组件
    */
   connectedComponent?: Component;
-  /**
-   * 在关闭时销毁弹窗。仅在使用 connectedComponent 时有效
-   */
-  destroyOnClose?: boolean;
   /**
    * 关闭前的回调，返回 false 可以阻止关闭
    * @returns

@@ -3,15 +3,15 @@ import type { TabDefinition } from '@vben-core/typings';
 
 import type { TabConfig, TabsProps } from '../../types';
 
+import { computed, ref } from 'vue';
+
 import { Pin, X } from '@vben-core/icons';
 import { VbenContextMenu, VbenIcon } from '@vben-core/shadcn-ui';
-import { computed, ref } from 'vue';
 
 interface Props extends TabsProps {}
 
 defineOptions({
   name: 'VbenTabsChrome',
-  // eslint-disable-next-line perfectionist/sort-objects
   inheritAttrs: false,
 });
 
@@ -40,14 +40,14 @@ const style = computed(() => {
 
 const tabsView = computed(() => {
   return props.tabs.map((tab) => {
-    const { fullPath, meta, name, path } = tab || {};
+    const { fullPath, meta, name, path, key } = tab || {};
     const { affixTab, icon, newTabTitle, tabClosable, title } = meta || {};
     return {
       affixTab: !!affixTab,
       closable: Reflect.has(meta, 'tabClosable') ? !!tabClosable : true,
       fullPath,
       icon: icon as string,
-      key: fullPath || path,
+      key,
       meta,
       name,
       path,

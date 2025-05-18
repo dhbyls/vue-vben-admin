@@ -52,14 +52,16 @@ withDefaults(defineProps<Props>(), {
         v-if="src"
         :alt="text"
         :src="src"
-        class="relative w-8 rounded-none bg-transparent"
+        :size="logoSize"
+        class="relative rounded-none bg-transparent"
       />
-      <span
-        v-if="!collapsed"
-        class="text-foreground truncate text-nowrap font-semibold"
-      >
-        {{ text }}
-      </span>
+      <template v-if="!collapsed">
+        <slot name="text">
+          <span class="text-foreground truncate text-nowrap font-semibold">
+            {{ text }}
+          </span>
+        </slot>
+      </template>
     </a>
   </div>
 </template>

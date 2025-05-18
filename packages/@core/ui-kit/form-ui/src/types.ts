@@ -1,8 +1,10 @@
+import type { FieldOptions, FormContext, GenericObject } from 'vee-validate';
+import type { ZodTypeAny } from 'zod';
+
+import type { Component, HtmlHTMLAttributes, Ref } from 'vue';
+
 import type { VbenButtonProps } from '@vben-core/shadcn-ui';
 import type { ClassType, MaybeComputedRef } from '@vben-core/typings';
-import type { FieldOptions, FormContext, GenericObject } from 'vee-validate';
-import type { Component, HtmlHTMLAttributes, Ref } from 'vue';
-import type { ZodTypeAny } from 'zod';
 
 import type { FormApi } from './form-api';
 
@@ -18,7 +20,7 @@ export type BaseFormComponentType =
   | 'VbenSelect'
   | (Record<never, never> & string);
 
-type Breakpoints = '' | '2xl:' | '3xl:' | 'lg:' | 'md:' | 'sm:' | 'xl:';
+type Breakpoints = '2xl:' | '3xl:' | '' | 'lg:' | 'md:' | 'sm:' | 'xl:';
 
 type GridCols = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
@@ -34,12 +36,12 @@ export type FormItemClassType =
   | WrapperClassType;
 
 export type FormFieldOptions = Partial<
-  {
+  FieldOptions & {
     validateOnBlur?: boolean;
     validateOnChange?: boolean;
     validateOnInput?: boolean;
     validateOnModelUpdate?: boolean;
-  } & FieldOptions
+  }
 >;
 
 export interface FormShape {
@@ -230,6 +232,12 @@ export type FieldMappingTime = [
   )?,
 ][];
 
+export type ArrayToStringFields = Array<
+  | [string[], string?] // 嵌套数组格式，可选分隔符
+  | string // 单个字段，使用默认分隔符
+  | string[] // 简单数组格式，最后一个元素可以是分隔符
+>;
+
 export interface FormSchema<
   T extends BaseFormComponentType = BaseFormComponentType,
 > extends FormCommonConfig {
@@ -242,13 +250,13 @@ export interface FormSchema<
   /** 依赖 */
   dependencies?: FormItemDependencies;
   /** 描述 */
-  description?: string;
+  description?: CustomRenderType;
   /** 字段名 */
   fieldName: string;
   /** 帮助信息 */
-  help?: string;
+  help?: CustomRenderType;
   /** 表单项 */
-  label?: string;
+  label?: CustomRenderType;
   // 自定义组件内部渲染
   renderComponentContent?: RenderComponentContentType;
   /** 字段规则 */
@@ -264,6 +272,10 @@ export interface FormFieldProps extends FormSchema {
 export interface FormRenderProps<
   T extends BaseFormComponentType = BaseFormComponentType,
 > {
+  /**
+   * 表单字段数组映射字符串配置 默认使用","
+   */
+  arrayToStringFields?: ArrayToStringFields;
   /**
    * 是否展开，在showCollapseButton=true下生效
    */
@@ -295,6 +307,10 @@ export interface FormRenderProps<
    */
   componentMap: Record<BaseFormComponentType, Component>;
   /**
+   * 表单字段映射到时间格式
+   */
+  fieldMappingTime?: FieldMappingTime;
+  /**
    * 表单实例
    */
   form?: FormContext<GenericObject>;
@@ -306,10 +322,15 @@ export interface FormRenderProps<
    * 表单定义
    */
   schema?: FormSchema<T>[];
+
   /**
    * 是否显示展开/折叠
    */
   showCollapseButton?: boolean;
+  /**
+   * 格式化日期
+   */
+
   /**
    * 表单栅格布局
    * @default "grid-cols-1"
@@ -338,6 +359,11 @@ export interface VbenFormProps<
    */
   actionWrapperClass?: ClassType;
   /**
+   * 表单字段数组映射字符串配置 默认使用","
+   */
+  arrayToStringFields?: ArrayToStringFields;
+
+  /**
    * 表单字段映射
    */
   fieldMappingTime?: FieldMappingTime;
@@ -352,11 +378,15 @@ export interface VbenFormProps<
   /**
    * 表单值变化回调
    */
-  handleValuesChange?: (values: Record<string, any>) => void;
+  handleValuesChange?: (
+    values: Record<string, any>,
+    fieldsChanged: string[],
+  ) => void;
   /**
    * 重置按钮参数
    */
   resetButtonOptions?: ActionButtonOptions;
+
   /**
    * 是否显示默认操作按钮
    * @default true
@@ -381,11 +411,11 @@ export interface VbenFormProps<
   submitOnEnter?: boolean;
 }
 
-export type ExtendedFormApi = {
+export type ExtendedFormApi = FormApi & {
   useStore: <T = NoInfer<VbenFormProps>>(
     selector?: (state: NoInfer<VbenFormProps>) => T,
   ) => Readonly<Ref<T>>;
-} & FormApi;
+};
 
 export interface VbenFormAdapterOptions<
   T extends BaseFormComponentType = BaseFormComponentType,

@@ -9,7 +9,11 @@ vi.mock('@vben-core/shared/store', () => {
   return {
     isFunction: (fn: any) => typeof fn === 'function',
     Store: class {
+      get state() {
+        return this._state;
+      }
       private _state: DrawerState;
+
       private options: any;
 
       constructor(initialState: DrawerState, options: any) {
@@ -24,10 +28,6 @@ vi.mock('@vben-core/shared/store', () => {
       setState(fn: (prev: DrawerState) => DrawerState) {
         this._state = fn(this._state);
         this.options.onUpdate();
-      }
-
-      get state() {
-        return this._state;
       }
     },
   };
@@ -54,7 +54,6 @@ describe('drawerApi', () => {
   });
 
   it('should close the drawer if onBeforeClose allows it', () => {
-    drawerApi.open();
     drawerApi.close();
     expect(drawerApi.store.state.isOpen).toBe(false);
   });

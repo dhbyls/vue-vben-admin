@@ -3,6 +3,8 @@ import type { CSSProperties } from 'vue';
 
 import type { VbenLayoutProps } from './vben-layout';
 
+import { computed, ref, watch } from 'vue';
+
 import {
   SCROLL_FIXED_CLASS,
   useLayoutFooterStyle,
@@ -11,8 +13,8 @@ import {
 import { Menu } from '@vben-core/icons';
 import { VbenIconButton } from '@vben-core/shadcn-ui';
 import { ELEMENT_ID_MAIN_CONTENT } from '@vben-core/shared/constants';
+
 import { useMouse, useScroll, useThrottleFn } from '@vueuse/core';
-import { computed, ref, watch } from 'vue';
 
 import {
   LayoutContent,
@@ -47,8 +49,10 @@ const props = withDefaults(defineProps<Props>(), {
   headerVisible: true,
   isMobile: false,
   layout: 'sidebar-nav',
+  sidebarCollapsedButton: true,
   sidebarCollapseShowTitle: false,
   sidebarExtraCollapsedWidth: 60,
+  sidebarFixedButton: true,
   sidebarHidden: false,
   sidebarMixedWidth: 80,
   sidebarTheme: 'dark',
@@ -60,10 +64,16 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{ sideMouseLeave: []; toggleSidebar: [] }>();
-const sidebarCollapse = defineModel<boolean>('sidebarCollapse');
+const sidebarCollapse = defineModel<boolean>('sidebarCollapse', {
+  default: false,
+});
 const sidebarExtraVisible = defineModel<boolean>('sidebarExtraVisible');
-const sidebarExtraCollapse = defineModel<boolean>('sidebarExtraCollapse');
-const sidebarExpandOnHover = defineModel<boolean>('sidebarExpandOnHover');
+const sidebarExtraCollapse = defineModel<boolean>('sidebarExtraCollapse', {
+  default: false,
+});
+const sidebarExpandOnHover = defineModel<boolean>('sidebarExpandOnHover', {
+  default: false,
+});
 const sidebarEnable = defineModel<boolean>('sidebarEnable', { default: true });
 
 // side是否处于hover状态展开菜单中
@@ -479,6 +489,8 @@ const idMainContent = ELEMENT_ID_MAIN_CONTENT;
       v-model:expand-on-hovering="sidebarExpandOnHovering"
       v-model:extra-collapse="sidebarExtraCollapse"
       v-model:extra-visible="sidebarExtraVisible"
+      :show-collapse-button="sidebarCollapsedButton"
+      :show-fixed-button="sidebarFixedButton"
       :collapse-width="getSideCollapseWidth"
       :dom-visible="!isMobile"
       :extra-width="sidebarExtraWidth"

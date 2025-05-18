@@ -2,11 +2,14 @@
 import type { BuiltinThemePreset } from '@vben/preferences';
 import type { BuiltinThemeType } from '@vben/types';
 
+import { computed, ref, watch } from 'vue';
+
 import { UserRoundPen } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { BUILT_IN_THEME_PRESETS } from '@vben/preferences';
 import { convertToHsl, TinyColor } from '@vben/utils';
-import { computed, ref, watch } from 'vue';
+
+import { useThrottleFn } from '@vueuse/core';
 
 defineOptions({
   name: 'PreferenceBuiltinTheme',
@@ -17,6 +20,15 @@ const props = defineProps<{ isDark: boolean }>();
 const colorInput = ref();
 const modelValue = defineModel<BuiltinThemeType>({ default: 'default' });
 const themeColorPrimary = defineModel<string>('themeColorPrimary');
+
+const updateThemeColorPrimary = useThrottleFn(
+  (value: string) => {
+    themeColorPrimary.value = value;
+  },
+  300,
+  true,
+  true,
+);
 
 const inputValue = computed(() => {
   return new TinyColor(themeColorPrimary.value || '').toHexString();
@@ -83,7 +95,7 @@ function handleSelect(theme: BuiltinThemePreset) {
 
 function handleInputChange(e: Event) {
   const target = e.target as HTMLInputElement;
-  themeColorPrimary.value = convertToHsl(target.value);
+  updateThemeColorPrimary(convertToHsl(target.value));
 }
 
 function selectColor() {

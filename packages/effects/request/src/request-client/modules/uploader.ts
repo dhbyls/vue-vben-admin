@@ -10,13 +10,19 @@ class FileUploader {
 
   public async upload<T = any>(
     url: string,
-    data: { file: Blob | File } & Record<string, any>,
+    data: Record<string, any> & { file: Blob | File },
     config?: RequestClientConfig,
   ): Promise<T> {
     const formData = new FormData();
 
     Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value);
+      if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+          formData.append(`${key}[${index}]`, item);
+        });
+      } else {
+        formData.append(key, value);
+      }
     });
 
     const finalConfig: RequestClientConfig = {

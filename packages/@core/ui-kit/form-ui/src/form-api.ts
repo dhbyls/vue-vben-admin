@@ -1,4 +1,3 @@
-import type { Recordable } from '@vben-core/typings';
 import type {
   FormState,
   GenericObject,
@@ -6,7 +5,13 @@ import type {
   ValidationOptions,
 } from 'vee-validate';
 
+import type { ComponentPublicInstance } from 'vue';
+
+import type { Recordable } from '@vben-core/typings';
+
 import type { FormActions, FormSchema, VbenFormProps } from './types';
+
+import { toRaw } from 'vue';
 
 import { Store } from '@vben-core/shared/store';
 import {
@@ -20,7 +25,6 @@ import {
   mergeWithArrayOverride,
   StateHandler,
 } from '@vben-core/shared/utils';
-import { toRaw } from 'vue';
 
 function getDefaultState(): VbenFormProps {
   return {
@@ -45,68 +49,24 @@ function getDefaultState(): VbenFormProps {
 }
 
 export class FormApi {
-  private handleRangeTimeValue = (originValues: Record<string, any>) => {
-    const values = { ...originValues };
-    const fieldMappingTime = this.state?.fieldMappingTime;
+  // private api: Pick<VbenFormProps, 'handleReset' | 'handleSubmit'>;
+  public form = {} as FormActions;
+  isMounted = false;
 
-    if (!fieldMappingTime || !Array.isArray(fieldMappingTime)) {
-      return values;
-    }
+  public state: null | VbenFormProps = null;
+  stateHandler: StateHandler;
 
-    fieldMappingTime.forEach(
-      ([field, [startTimeKey, endTimeKey], format = 'YYYY-MM-DD']) => {
-        if (startTimeKey && endTimeKey && values[field] === null) {
-          Reflect.deleteProperty(values, startTimeKey);
-          Reflect.deleteProperty(values, endTimeKey);
-          // delete values[startTimeKey];
-          // delete values[endTimeKey];
-        }
+  public store: Store<VbenFormProps>;
 
-        if (!values[field]) {
-          Reflect.deleteProperty(values, field);
-          // delete values[field];
-          return;
-        }
+  /**
+   * 组件实例映射
+   */
+  private componentRefMap: Map<string, unknown> = new Map();
 
-        const [startTime, endTime] = values[field];
-        if (format === null) {
-          values[startTimeKey] = startTime;
-          values[endTimeKey] = endTime;
-        } else if (isFunction(format)) {
-          values[startTimeKey] = format(startTime, startTimeKey);
-          values[endTimeKey] = format(endTime, endTimeKey);
-        } else {
-          const [startTimeFormat, endTimeFormat] = Array.isArray(format)
-            ? format
-            : [format, format];
-
-          values[startTimeKey] = startTime
-            ? formatDate(startTime, startTimeFormat)
-            : undefined;
-          values[endTimeKey] = endTime
-            ? formatDate(endTime, endTimeFormat)
-            : undefined;
-        }
-        // delete values[field];
-        Reflect.deleteProperty(values, field);
-      },
-    );
-    return values;
-  };
   // 最后一次点击提交时的表单值
   private latestSubmissionValues: null | Recordable<any> = null;
 
   private prevState: null | VbenFormProps = null;
-  // private api: Pick<VbenFormProps, 'handleReset' | 'handleSubmit'>;
-  public form = {} as FormActions;
-
-  isMounted = false;
-
-  public state: null | VbenFormProps = null;
-
-  stateHandler: StateHandler;
-
-  public store: Store<VbenFormProps>;
 
   constructor(options: VbenFormProps = {}) {
     const { ...storeState } = options;
@@ -132,32 +92,44 @@ export class FormApi {
     bindMethods(this);
   }
 
-  private async getForm() {
-    if (!this.isMounted) {
-      // 等待form挂载
-      await this.stateHandler.waitForCondition();
-    }
-    if (!this.form?.meta) {
-      throw new Error('<VbenForm /> is not mounted');
-    }
-    return this.form;
+  /**
+   * 获取字段组件实例
+   * @param fieldName 字段名
+   * @returns 组件实例
+   */
+  getFieldComponentRef<T = ComponentPublicInstance>(
+    fieldName: string,
+  ): T | undefined {
+    return this.componentRefMap.has(fieldName)
+      ? (this.componentRefMap.get(fieldName) as T)
+      : undefined;
   }
 
-  private updateState() {
-    const currentSchema = this.state?.schema ?? [];
-    const prevSchema = this.prevState?.schema ?? [];
-    // 进行了删除schema操作
-    if (currentSchema.length < prevSchema.length) {
-      const currentFields = new Set(
-        currentSchema.map((item) => item.fieldName),
-      );
-      const deletedSchema = prevSchema.filter(
-        (item) => !currentFields.has(item.fieldName),
-      );
-      for (const schema of deletedSchema) {
-        this.form?.setFieldValue?.(schema.fieldName, undefined);
+  /**
+   * 获取当前聚焦的字段，如果没有聚焦的字段则返回undefined
+   */
+  getFocusedField() {
+    for (const fieldName of this.componentRefMap.keys()) {
+      const ref = this.getFieldComponentRef(fieldName);
+      if (ref) {
+        let el: HTMLElement | null = null;
+        if (ref instanceof HTMLElement) {
+          el = ref;
+        } else if (ref.$el instanceof HTMLElement) {
+          el = ref.$el;
+        }
+        if (!el) {
+          continue;
+        }
+        if (
+          el === document.activeElement ||
+          el.contains(document.activeElement)
+        ) {
+          return fieldName;
+        }
       }
     }
+    return undefined;
   }
 
   getLatestSubmissionValues() {
@@ -168,9 +140,9 @@ export class FormApi {
     return this.state;
   }
 
-  async getValues() {
+  async getValues<T = Recordable<any>>() {
     const form = await this.getForm();
-    return form.values ? this.handleRangeTimeValue(form.values) : {};
+    return (form.values ? this.handleRangeTimeValue(form.values) : {}) as T;
   }
 
   async isFieldValid(fieldName: string) {
@@ -218,13 +190,14 @@ export class FormApi {
     return proxy;
   }
 
-  mount(formActions: FormActions) {
+  mount(formActions: FormActions, componentRefMap: Map<string, unknown>) {
     if (!this.isMounted) {
       Object.assign(this.form, formActions);
       this.stateHandler.setConditionTrue();
       this.setLatestSubmissionValues({
         ...toRaw(this.handleRangeTimeValue(this.form.values)),
       });
+      this.componentRefMap = componentRefMap;
       this.isMounted = true;
     }
   }
@@ -322,6 +295,7 @@ export class FormApi {
       return true;
     });
     const filteredFields = fieldMergeFn(fields, form.values);
+    this.handleStringToArrayFields(filteredFields);
     form.setValues(filteredFields, shouldValidate);
   }
 
@@ -331,6 +305,7 @@ export class FormApi {
     const form = await this.getForm();
     await form.submitForm();
     const rawValues = toRaw(await this.getValues());
+    this.handleArrayToStringFields(rawValues);
     await this.state?.handleSubmit?.(rawValues);
 
     return rawValues;
@@ -406,5 +381,199 @@ export class FormApi {
       console.error('validate error', validateResult?.errors);
     }
     return validateResult;
+  }
+
+  private async getForm() {
+    if (!this.isMounted) {
+      // 等待form挂载
+      await this.stateHandler.waitForCondition();
+    }
+    if (!this.form?.meta) {
+      throw new Error('<VbenForm /> is not mounted');
+    }
+    return this.form;
+  }
+
+  private handleArrayToStringFields = (originValues: Record<string, any>) => {
+    const arrayToStringFields = this.state?.arrayToStringFields;
+    if (!arrayToStringFields || !Array.isArray(arrayToStringFields)) {
+      return;
+    }
+
+    const processFields = (fields: string[], separator: string = ',') => {
+      this.processFields(fields, separator, originValues, (value, sep) =>
+        Array.isArray(value) ? value.join(sep) : value,
+      );
+    };
+
+    // 处理简单数组格式 ['field1', 'field2', ';'] 或 ['field1', 'field2']
+    if (arrayToStringFields.every((item) => typeof item === 'string')) {
+      const lastItem =
+        arrayToStringFields[arrayToStringFields.length - 1] || '';
+      const fields =
+        lastItem.length === 1
+          ? arrayToStringFields.slice(0, -1)
+          : arrayToStringFields;
+      const separator = lastItem.length === 1 ? lastItem : ',';
+      processFields(fields, separator);
+      return;
+    }
+
+    // 处理嵌套数组格式 [['field1'], ';']
+    arrayToStringFields.forEach((fieldConfig) => {
+      if (Array.isArray(fieldConfig)) {
+        const [fields, separator = ','] = fieldConfig;
+        // 根据类型定义，fields 应该始终是字符串数组
+        if (!Array.isArray(fields)) {
+          console.warn(
+            `Invalid field configuration: fields should be an array of strings, got ${typeof fields}`,
+          );
+          return;
+        }
+        processFields(fields, separator);
+      }
+    });
+  };
+
+  private handleRangeTimeValue = (originValues: Record<string, any>) => {
+    const values = { ...originValues };
+    const fieldMappingTime = this.state?.fieldMappingTime;
+
+    this.handleStringToArrayFields(values);
+
+    if (!fieldMappingTime || !Array.isArray(fieldMappingTime)) {
+      return values;
+    }
+
+    fieldMappingTime.forEach(
+      ([field, [startTimeKey, endTimeKey], format = 'YYYY-MM-DD']) => {
+        if (startTimeKey && endTimeKey && values[field] === null) {
+          Reflect.deleteProperty(values, startTimeKey);
+          Reflect.deleteProperty(values, endTimeKey);
+          // delete values[startTimeKey];
+          // delete values[endTimeKey];
+        }
+
+        if (!values[field]) {
+          Reflect.deleteProperty(values, field);
+          // delete values[field];
+          return;
+        }
+
+        const [startTime, endTime] = values[field];
+        if (format === null) {
+          values[startTimeKey] = startTime;
+          values[endTimeKey] = endTime;
+        } else if (isFunction(format)) {
+          values[startTimeKey] = format(startTime, startTimeKey);
+          values[endTimeKey] = format(endTime, endTimeKey);
+        } else {
+          const [startTimeFormat, endTimeFormat] = Array.isArray(format)
+            ? format
+            : [format, format];
+
+          values[startTimeKey] = startTime
+            ? formatDate(startTime, startTimeFormat)
+            : undefined;
+          values[endTimeKey] = endTime
+            ? formatDate(endTime, endTimeFormat)
+            : undefined;
+        }
+        // delete values[field];
+        Reflect.deleteProperty(values, field);
+      },
+    );
+    return values;
+  };
+
+  private handleStringToArrayFields = (originValues: Record<string, any>) => {
+    const arrayToStringFields = this.state?.arrayToStringFields;
+    if (!arrayToStringFields || !Array.isArray(arrayToStringFields)) {
+      return;
+    }
+
+    const processFields = (fields: string[], separator: string = ',') => {
+      this.processFields(fields, separator, originValues, (value, sep) => {
+        if (typeof value !== 'string') {
+          return value;
+        }
+        // 处理空字符串的情况
+        if (value === '') {
+          return [];
+        }
+        // 处理复杂分隔符的情况
+        const escapedSeparator = sep.replaceAll(
+          /[.*+?^${}()|[\]\\]/g,
+          String.raw`\$&`,
+        );
+        return value.split(new RegExp(escapedSeparator));
+      });
+    };
+
+    // 处理简单数组格式 ['field1', 'field2', ';'] 或 ['field1', 'field2']
+    if (arrayToStringFields.every((item) => typeof item === 'string')) {
+      const lastItem =
+        arrayToStringFields[arrayToStringFields.length - 1] || '';
+      const fields =
+        lastItem.length === 1
+          ? arrayToStringFields.slice(0, -1)
+          : arrayToStringFields;
+      const separator = lastItem.length === 1 ? lastItem : ',';
+      processFields(fields, separator);
+      return;
+    }
+
+    // 处理嵌套数组格式 [['field1'], ';']
+    arrayToStringFields.forEach((fieldConfig) => {
+      if (Array.isArray(fieldConfig)) {
+        const [fields, separator = ','] = fieldConfig;
+        if (Array.isArray(fields)) {
+          processFields(fields, separator);
+        } else if (typeof originValues[fields] === 'string') {
+          const value = originValues[fields];
+          if (value === '') {
+            originValues[fields] = [];
+          } else {
+            const escapedSeparator = separator.replaceAll(
+              /[.*+?^${}()|[\]\\]/g,
+              String.raw`\$&`,
+            );
+            originValues[fields] = value.split(new RegExp(escapedSeparator));
+          }
+        }
+      }
+    });
+  };
+
+  private processFields = (
+    fields: string[],
+    separator: string,
+    originValues: Record<string, any>,
+    transformFn: (value: any, separator: string) => any,
+  ) => {
+    fields.forEach((field) => {
+      const value = originValues[field];
+      if (value === undefined || value === null) {
+        return;
+      }
+      originValues[field] = transformFn(value, separator);
+    });
+  };
+
+  private updateState() {
+    const currentSchema = this.state?.schema ?? [];
+    const prevSchema = this.prevState?.schema ?? [];
+    // 进行了删除schema操作
+    if (currentSchema.length < prevSchema.length) {
+      const currentFields = new Set(
+        currentSchema.map((item) => item.fieldName),
+      );
+      const deletedSchema = prevSchema.filter(
+        (item) => !currentFields.has(item.fieldName),
+      );
+      for (const schema of deletedSchema) {
+        this.form?.setFieldValue?.(schema.fieldName, undefined);
+      }
+    }
   }
 }
