@@ -38,6 +38,8 @@ import {
 } from '#/api';
 
 import locale from '../../../../public/locale.json';
+
+import 'ag-grid-enterprise';
 // import template from './template';
 
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
@@ -1352,7 +1354,7 @@ const handleChaifen = () => {
 };
 
 // const fxxj_loading = ref<boolean>(false);
-// 反建盘点并自动关联
+// // 反建盘点并自动关联
 // const handlePdgl = () => {
 //   const czseleted = czGridApi.value.getSelectedRows(); // 获取选中的账面数据
 //   if (czseleted.length === 0) {

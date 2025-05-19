@@ -2,6 +2,14 @@ import type { List } from '#/type';
 
 import { requestClient } from '#/api/request';
 
+export namespace TableApi {
+  export interface PageFetchParams {
+    [key: string]: any;
+    page: number;
+    pageSize: number;
+  }
+}
+
 /** 获取租户数据 */
 export async function getTenantListDataApi() {
   return requestClient.post<List[]>('/tenant/list');
@@ -49,4 +57,13 @@ export async function uptCzDataApi(params: any) {
 /** 提取图片中的文字 */
 export async function getImgTextApi(params: any) {
   return requestClient.post('/pandian/get_img_text', params);
+}
+
+/**
+ * 获取修改记录
+ */
+export async function GetAassetsChangeRecored(
+  params: TableApi.PageFetchParams,
+) {
+  return requestClient.get('/pandian/getAssetsUptRecoredList', { params });
 }
