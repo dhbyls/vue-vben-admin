@@ -29,7 +29,7 @@ export async function caifenPdDataApi(params: any) {
   return requestClient.post('/pandian/caifenshuliang', params);
 }
 
-/** 取消绑定财政数据 */
+/** 取消绑定财政数据，解绑财政数据 */
 export async function unBindCzCode(params: any) {
   return requestClient.post('/CzAssets/unbind_cz_code', params);
 }
@@ -42,6 +42,13 @@ export async function bindCzCode(params: any) {
 /** 反向建盘点绑定财政数据 */
 export async function xjBindCzCode(params: any) {
   return requestClient.post('/CzAssets/xj_bind_cz_code', params);
+}
+
+/**
+ * 批量删除
+ */
+export async function BatchDel(params: any) {
+  return requestClient.post('/pandian/delete', params);
 }
 
 /** 修改实际盘点数据 */
@@ -66,4 +73,11 @@ export async function GetAassetsChangeRecored(
   params: TableApi.PageFetchParams,
 ) {
   return requestClient.get('/pandian/getAssetsUptRecoredList', { params });
+}
+
+/**
+ * 获取财政资产凭证等照片
+ */
+export async function GetAassetsImgs(params: any) {
+  return requestClient.get('/czAssets/getCzAassetsImgs', { params });
 }

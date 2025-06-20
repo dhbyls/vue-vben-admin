@@ -26,3 +26,8 @@ export async function getPrintProviderApi(params: any) {
 export async function getPrintProviderApi2(params: any) {
   return requestClient.post('/PrintTemplate/getPrintTemplate', params);
 }
+
+/** 上传文件 */
+export async function uploadFile(params: any) {
+  return requestClient.post('/upload/image', params);
+}

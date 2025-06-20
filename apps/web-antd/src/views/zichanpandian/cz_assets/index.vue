@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
+
 import type { List } from '#/type';
 
 import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
@@ -6,7 +8,9 @@ import { hiprint } from 'vue-plugin-hiprint';
 
 import { FrameReloadRounded } from '@vben/icons';
 import { usePreferences } from '@vben/preferences';
+import { useAccessStore } from '@vben/stores';
 
+import { LoadingOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { LicenseManager } from 'ag-grid-charts-enterprise';
 import { AgGridVue } from 'ag-grid-vue3';
 import {
@@ -19,13 +23,16 @@ import {
   message,
   Modal,
   Select,
+  TabPane,
+  Tabs,
   Textarea,
   Tooltip,
+  Upload,
 } from 'ant-design-vue';
 
 import {
-  bindCzCode,
   caifenPdDataApi,
+  GetAassetsImgs,
   getCzDataApi,
   getImgTextApi,
   getPandianDataApi,
@@ -73,7 +80,11 @@ const dzableChange = (_e: any) => {
 
 // 图片
 const open = ref<boolean>(false);
-const imgs = reactive({ data: [] });
+const imgs = reactive({
+  data: [
+    'http://api.wap.guziguanjia.zckjcq.com/storage/uploads/assets/87627E8EFF83A13D08A8AE873EB98DW1/00887C991A902E7617EA99FAF4A940F4/20250520/82e5d34b669c12067d68f1f0401d9cba.jpg',
+  ],
+});
 const img_text = ref('');
 // 提取文字
 const tiquwenzi = (val: String) => {
@@ -898,6 +909,29 @@ function onCzCellValueChanged(params: any) {
 const clearSelectedRows = () => {
   gridApi.value.deselectAll(); // 清除所有选中的行
 };
+interface CzImgItem {
+  type: string;
+  label: string;
+  imgs: [];
+  count: number;
+}
+const czimgs = reactive<{ data: CzImgItem[] }>({ data: [] });
+const loading = ref(false);
+const assets_id = ref<string>(''); // 用于上传凭证图片的id
+const loadImgs = async (cz_assets_id: any) => {
+  await GetAassetsImgs({
+    tenant_id: tenant_id.value,
+    cz_assets_id,
+  }).then((res: any) => {
+    if (res.code === 0) {
+      czimgs.data = res.data;
+      return false;
+    }
+    message.error({
+      content: res.msg,
+    });
+  });
+};
 const czGridOptions = {
   excelStyles: [
     {
@@ -916,70 +950,10 @@ const czGridOptions = {
     if (czEditable.value) {
       return false;
     }
-
-    const pd = gridApi.value.getSelectedRows(); // 获取选中的盘点数据
-    if (pd.length === 0) {
-      message.error({
-        content: '绑定请勾选上方表格的数据',
-      });
-      return false;
-    }
-    await bindCzCode({
-      tenant_id: tenant_id.value,
-      pd,
-      cz: params.data,
-    }).then((res: any) => {
-      if (res.code === 0) {
-        /** 更新盘点数据状态 */
-        pd.forEach((update: any) => {
-          const rowNode = gridApi.value.getRowNode(update.id);
-          // rowNode.setDataValue('bind_code', params.data.assets_code);
-          rowNode.setData({
-            ...rowNode.data,
-            bind_code: params.data.assets_code,
-            bind_cz_assets_id: params.data.id,
-          });
-        });
-        // // 当单元格值发生变化时，重绘该行
-        // gridApi.value.redrawRows({
-        //   rowNodes: [gridApi.value.getSelectedNodes], // 刷新行节点
-        //   columns: ['bind_code'], // 刷新发生变化的列
-        // });
-        // // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
-        // gridApi.value.refreshCells({
-        //   force: true,
-        //   suppressFlash: true,
-        //   rowNodes: [gridApi.value.getSelectedNodes], // 刷新行节点
-        //   columns: ['bind_code'], // 刷新发生变化的列
-        // });
-
-        /** 更新财政数据状态 */
-        const czrowNode = czGridApi.value.getRowNode(params.data.id);
-        czrowNode.setDataValue('bind_sum', res.data.bind_sum);
-        // // 当单元格值发生变化时，重绘该行
-        // const changedCell = params.colDef.field;
-        // czGridApi.value.redrawRows({
-        //   rowNodes: [params.node], // 刷新行节点
-        //   columns: [changedCell], // 刷新发生变化的列
-        // });
-        // // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
-        // czGridApi.value.refreshCells({
-        //   force: true,
-        //   suppressFlash: true,
-        //   rowNodes: [params.node], // 刷新行节点
-        //   columns: [changedCell], // 刷新发生变化的列
-        // });
-        clearSelectedRows();
-        gridApi.value.onFilterChanged();
-        message.success({
-          content: res.msg,
-        });
-        return false;
-      }
-      message.error({
-        content: res.msg,
-      });
-    });
+    assets_id.value = params.data.id;
+    loading.value = true;
+    loadImgs(params.data.id);
+    loading.value = false;
 
     // czGridApi.value.setGridOption('quickFilterText', cz_search_val.value);
   },
@@ -1481,6 +1455,54 @@ const HandlePrint = async () => {
   // 调用浏览器打印
   // hiprintTemplate.print(dataSort.data, options, ext);
 };
+
+const activeKey = ref('1'); // Tab默认选中第一个标签
+// 添加上传文件 /start
+
+const formatToken = (token: null | string) => {
+  return token ? `Bearer ${token}` : null;
+};
+const upload_file_url = `${import.meta.env.VITE_GLOB_API_URL}/upload/image`;
+const accessStore = useAccessStore();
+const Authorization = formatToken(accessStore.accessToken);
+const Headers = {
+  Authorization,
+};
+const beforeUpload = (file: UploadProps['fileList'][number]) => {
+  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+  if (!isJpgOrPng) {
+    message.error('只能生传 JPG 或 PNG 图片!');
+  }
+  const isLt3M = file.size / 1024 / 1024 < 3;
+  if (!isLt3M) {
+    message.error('上传图片必须小余3MB!');
+  }
+  return isJpgOrPng && isLt3M;
+};
+const fileList = ref([]);
+const loading_uploadfile = ref<boolean>(false);
+const file_req_data = ref<any>({
+  data: { type: activeKey, tenant_id, assets_id },
+});
+
+const handleFileChange = (info: UploadChangeParam) => {
+  if (info.file.status === 'uploading') {
+    loading_uploadfile.value = true;
+    return;
+  }
+  if (info.file.status === 'done') {
+    message.success({
+      content: info?.file?.response.msg,
+    });
+    loadImgs(assets_id.value);
+    loading_uploadfile.value = false;
+  }
+  if (info.file.status === 'error') {
+    loading_uploadfile.value = false;
+    message.error('上传失败！');
+  }
+};
+// 添加上传文件 /end
 </script>
 
 <template auto-content-height>
@@ -1667,7 +1689,7 @@ const HandlePrint = async () => {
         反建盘点并关联
       </Button> -->
     </div>
-    <div v-show="!dzable" class="edit flex flex-col p-4 lg:flex-row">
+    <div v-show="!dzable" class="dz flex flex-col p-4 lg:flex-row">
       <div class="card-box w-full p-2">
         <AgGridVue
           :cell-selection="cellSelection"
@@ -1690,6 +1712,62 @@ const HandlePrint = async () => {
       </div>
     </div>
     <!-- 财政数据 / end-->
+    <div
+      class="bg-card text-foreground dz30 text-sm leading-6 text-sky-500 dark:text-sky-400"
+    >
+      <div class="h-full w-full pb-4 pl-4 pr-4">
+        <div
+          class="flex items-center justify-between pl-2 pt-4"
+          v-show="czimgs.data.length === 0"
+        >
+          双击上方表格查看照片
+        </div>
+        <Tabs v-model:active-key="activeKey" v-show="czimgs.data.length > 0">
+          <TabPane
+            :key="val.type"
+            :tab="`${val.label}(${val.count})`"
+            v-for="val in czimgs.data"
+          >
+            <ImagePreviewGroup>
+              <view style="display: flex; flex-wrap: wrap">
+                <view v-for="(v, i) in val.imgs" :key="i" class="relative mr-2">
+                  <view class="z-20">
+                    <Image
+                      :src="v"
+                      width="100px"
+                      height="100px"
+                      fallback="data:image/png;base64,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"
+                    />
+                  </view>
+                </view>
+                <!-- 上传 -->
+                <Upload
+                  v-model:file-list="fileList"
+                  name="file"
+                  list-type="picture-card"
+                  class="avatar-uploader flex-direction flex flex-col items-center justify-center"
+                  :show-upload-list="false"
+                  :action="upload_file_url"
+                  :headers="Headers"
+                  :multiple="true"
+                  :before-upload="beforeUpload"
+                  @change="handleFileChange"
+                  :data="file_req_data.data"
+                >
+                  <view
+                    class="flex-direction flex flex-col items-center justify-center"
+                  >
+                    <LoadingOutlined v-if="loading_uploadfile" />
+                    <PlusOutlined v-else />
+                    <div class="ant-upload-text text-xs">上传照片</div>
+                  </view>
+                </Upload>
+              </view>
+            </ImagePreviewGroup>
+          </TabPane>
+        </Tabs>
+      </div>
+    </div>
 
     <!-- 照片浏览 -->
     <Drawer
@@ -1744,7 +1822,11 @@ const HandlePrint = async () => {
 
 <style scoped>
 .dz {
-  height: calc(50% - 50px);
+  height: calc(70% - 50px);
+}
+
+.dz30 {
+  height: 30%;
 }
 
 .edit {
@@ -1770,5 +1852,25 @@ const HandlePrint = async () => {
 
 .row-red {
   background-color: #fdd;
+}
+
+.ant-upload-wrapper.ant-upload-picture-card-wrapper
+  .ant-upload.ant-upload-select {
+  width: 80px !important;
+  height: 80px !important;
+}
+
+.ant-upload-select-picture-card i {
+  font-size: 32px;
+  color: #999;
+}
+
+.ant-upload-select-picture-card .ant-upload-text {
+  margin-top: 8px;
+  color: #666;
+}
+
+.ant-upload-wrapper.ant-upload-picture-card-wrapper {
+  width: auto !important;
 }
 </style>

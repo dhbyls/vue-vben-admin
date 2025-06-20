@@ -83,7 +83,6 @@ const gridOptions: VxeTableGridOptions<RowType> = {
   },
   columns: [
     { title: '序号', type: 'seq', width: 50 },
-    { field: 'tenant_name', title: '单位' },
     { field: 'assets_number', title: '资产编号', width: 200 },
     { field: 'assets_name', title: '资产名称' },
     { field: 'upt_field', title: '更新字段' },
@@ -93,6 +92,7 @@ const gridOptions: VxeTableGridOptions<RowType> = {
     { field: 'upt_time', title: '更新时间' },
   ],
   exportConfig: {},
+  size: 'mini',
   // resizableConfig: { isDblclickAutoWidthvxe: true },
   height: 'auto',
   keepSource: true,

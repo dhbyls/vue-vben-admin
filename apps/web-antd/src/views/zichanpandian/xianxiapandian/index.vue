@@ -1,12 +1,20 @@
 <script lang="ts" setup>
 import type { List } from '#/type';
 
-import { computed, onMounted, reactive, ref, shallowRef } from 'vue';
+import {
+  computed,
+  createVNode,
+  onMounted,
+  reactive,
+  ref,
+  shallowRef,
+} from 'vue';
 import { hiprint } from 'vue-plugin-hiprint';
 
 import { FrameReloadRounded } from '@vben/icons';
 import { usePreferences } from '@vben/preferences';
 
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { LicenseManager } from 'ag-grid-charts-enterprise';
 import { AgGridVue } from 'ag-grid-vue3';
 import {
@@ -24,6 +32,7 @@ import {
 } from 'ant-design-vue';
 
 import {
+  BatchDel,
   bindCzCode,
   caifenPdDataApi,
   getCzDataApi,
@@ -39,9 +48,10 @@ import {
 } from '#/api';
 
 import locale from '../../../../public/locale.json';
+import ActionsCellRenderer from './actionsCellRenderer.vue';
+// import template from './template';
 
 import 'ag-grid-enterprise';
-// import template from './template';
 
 import 'ag-grid-charts-enterprise/styles/ag-grid.min.css';
 import 'ag-grid-charts-enterprise/styles/ag-theme-balham.min.css';
@@ -103,27 +113,11 @@ const czColumnDefs = ref([
     editable: false,
   },
   {
-    headerName: '财政编码',
-    field: 'assets_code',
+    headerName: '数量/面积',
+    field: 'num',
     flex: 1,
+    cellDataType: 'number',
     filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable: false,
-    cellClass: 'text-format',
-  },
-  {
-    headerName: '名称',
-    field: 'name',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable: false,
-  },
-  {
-    headerName: '反写关联',
-    field: 'fxxj',
-    flex: 1,
-    filter: true,
     floatingFilter: true,
     editable: false,
   },
@@ -137,17 +131,17 @@ const czColumnDefs = ref([
     editable: false,
   },
   {
-    headerName: '数量/面积',
-    field: 'num',
+    headerName: '财政编码',
+    field: 'assets_code',
     flex: 1,
-    cellDataType: 'number',
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable: false,
+    cellClass: 'text-format',
   },
   {
-    headerName: '账面数据',
-    field: 'iscz',
+    headerName: '名称',
+    field: 'name',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
@@ -169,27 +163,19 @@ const czColumnDefs = ref([
     floatingFilter: true,
     editable: false,
   },
+  // {
+  //   headerName: '是否财政',
+  //   field: 'iscz',
+  //   flex: 1,
+  //   filter: 'agMultiColumnFilter',
+  //   floatingFilter: true,
+  //   editable: false,
+  // },
   {
-    headerName: '使用部门',
-    field: 'sybm',
+    headerName: '反写关联',
+    field: 'fxxj',
     flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable: false,
-  },
-  {
-    headerName: '使用人',
-    field: 'syuser',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable: false,
-  },
-  {
-    headerName: '存放地点',
-    field: 'addr',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
+    filter: true,
     floatingFilter: true,
     editable: false,
   },
@@ -210,16 +196,10 @@ const czColumnDefs = ref([
     editable: czEditable,
   },
   {
-    headerName: '取得日期',
-    field: 'date_of_acquisition',
+    headerName: '记账凭证号',
+    field: 'jzpzh',
     flex: 1,
-    floatingFilter: true,
-    editable: false,
-  },
-  {
-    headerName: '记账日期',
-    field: 'jzrq',
-    flex: 1,
+    filter: 'agMultiColumnFilter',
     floatingFilter: true,
     editable: false,
   },
@@ -234,6 +214,44 @@ const czColumnDefs = ref([
   {
     headerName: '均价/单价(元)',
     field: 'danjia',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '取得日期',
+    field: 'date_of_acquisition',
+    flex: 1,
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '记账日期',
+    field: 'jzrq',
+    flex: 1,
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '存放地点',
+    field: 'addr',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '使用部门',
+    field: 'sybm',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable: false,
+  },
+  {
+    headerName: '使用人',
+    field: 'syuser',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
@@ -282,14 +300,6 @@ const czColumnDefs = ref([
   {
     headerName: '财务入账状态',
     field: 'cwrzzt',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable: false,
-  },
-  {
-    headerName: '记账凭证号',
-    field: 'jzpzh',
     flex: 1,
     filter: 'agMultiColumnFilter',
     floatingFilter: true,
@@ -697,6 +707,40 @@ const columnDefs = ref([
     editable,
   },
   {
+    headerName: '存放地点',
+    field: 'addr',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable,
+  },
+  {
+    headerName: '备注',
+    field: 'remark',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable,
+  },
+  {
+    headerName: '备注2',
+    field: 'remark_second',
+    flex: 1,
+    filter: 'agMultiColumnFilter',
+    floatingFilter: true,
+    editable,
+  },
+  {
+    headerName: '生产日期',
+    field: 'production_date',
+    flex: 1,
+    // filter: 'agMultiColumnFilter',
+    cellEditor: 'agDateStringCellEditor',
+    floatingFilter: true,
+    editable,
+    cellDataType: 'dateString',
+  },
+  {
     headerName: '使用状态',
     field: 'stat',
     flex: 1,
@@ -714,32 +758,6 @@ const columnDefs = ref([
       highlightMatch: true,
       valueListMaxHeight: 220,
     },
-  },
-  {
-    headerName: '生产日期',
-    field: 'production_date',
-    flex: 1,
-    // filter: 'agMultiColumnFilter',
-    cellEditor: 'agDateStringCellEditor',
-    floatingFilter: true,
-    editable,
-    cellDataType: 'dateString',
-  },
-  {
-    headerName: '存放地点',
-    field: 'addr',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable,
-  },
-  {
-    headerName: '备注',
-    field: 'remark',
-    flex: 1,
-    filter: 'agMultiColumnFilter',
-    floatingFilter: true,
-    editable,
   },
   {
     headerName: '打印需求',
@@ -806,7 +824,16 @@ const columnDefs = ref([
     floatingFilter: true,
     editable: false,
   },
-  // { field: "button", cellRenderer: CustomButtonComponent },
+  {
+    field: '操作',
+    editable: false,
+    filter: false,
+    sortable: false,
+    floatingFilter: false,
+    pinned: 'right',
+    width: '60px',
+    cellRenderer: ActionsCellRenderer,
+  },
 ]);
 
 const rowData = ref<List[]>([]); // 盘点数据
@@ -1079,37 +1106,54 @@ const gridOptions = {
       return false;
     }
 
-    unBindCzCode({ pd, tenant_id: tenant_id.value }).then((res) => {
-      if (res.code === 0) {
-        /** 更新盘点数据状态 */
-        const rowNode = gridApi.value.getRowNode(pd.id);
-        rowNode.setDataValue('bind_code', '');
-
-        /** 更新财政数据状态 */
-        const czrowNode = czGridApi.value.getRowNode(pd.bind_cz_assets_id);
-        czrowNode.setDataValue('bind_sum', res.data.bind_sum);
-
-        // 当单元格值发生变化时，重绘该行
-        czGridApi.value.redrawRows({
-          rowNodes: [czrowNode], // 刷新行节点
-          columns: ['bind_sum'], // 刷新发生变化的列
-        });
-        // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
-        czGridApi.value.refreshCells({
-          force: true,
-          suppressFlash: true,
-          rowNodes: [czrowNode], // 刷新行节点
-          columns: ['bind_sum'], // 刷新发生变化的列
-        });
-
-        message.success({
-          content: res.msg,
-        });
-        return false;
-      }
-      message.error({
-        content: res.msg,
+    if (czRowData.data.length === 0) {
+      message.warn({
+        content: '解绑须先加载下方财政数据',
       });
+      return false;
+    }
+
+    Modal.confirm({
+      title: '提示',
+      icon: createVNode(ExclamationCircleOutlined),
+      content: `确认解绑数据吗？`,
+      okType: 'danger',
+      okText: '确认解绑',
+      async onOk() {
+        unBindCzCode({ pd, tenant_id: tenant_id.value }).then((res) => {
+          if (res.code === 0) {
+            /** 更新盘点数据状态 */
+            const rowNode = gridApi.value.getRowNode(pd.id);
+            rowNode.setDataValue('bind_code', '');
+
+            /** 更新财政数据状态 */
+            const czrowNode = czGridApi.value.getRowNode(pd.bind_cz_assets_id);
+            czrowNode.setDataValue('bind_sum', res.data.bind_sum);
+
+            // 当单元格值发生变化时，重绘该行
+            czGridApi.value.redrawRows({
+              rowNodes: [czrowNode], // 刷新行节点
+              columns: ['bind_sum'], // 刷新发生变化的列
+            });
+            // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
+            czGridApi.value.refreshCells({
+              force: true,
+              suppressFlash: true,
+              rowNodes: [czrowNode], // 刷新行节点
+              columns: ['bind_sum'], // 刷新发生变化的列
+            });
+
+            message.success({
+              content: res.msg,
+            });
+            return false;
+          }
+          message.error({
+            content: res.msg,
+          });
+        });
+      },
+      onCancel() {},
     });
   },
 
@@ -1408,6 +1452,138 @@ const handlePdgl = () => {
   });
 };
 
+const getContextMenuItems = (params: any) => {
+  const defaultItems = params.defaultItems ?? [];
+  const selectedRows = params.api.getSelectedRows();
+  // 判断是否选中
+  const hasSelection = selectedRows.length > 0;
+
+  // 判断是否所有选中项的 bind_code 都不为空
+  const hasUnboundRows = selectedRows.some(
+    (row: any) => row.bind_code !== null && row.bind_code !== '',
+  );
+  // 判断是否所有选中项的 bind_code 存在空
+  const hasboundRows = selectedRows.some(
+    (row: any) => row.bind_code === null || row.bind_code === '',
+  );
+
+  // 批量删除菜单 /start
+  const deleteMenuItem = {
+    name: `删除选中行(${selectedRows.length})`,
+    icon: '❌',
+    disabled: true,
+    tooltip: '',
+    action: () => {},
+  };
+
+  if (!hasSelection) {
+    deleteMenuItem.name = '请先选择要删除的行';
+  } else if (hasUnboundRows) {
+    deleteMenuItem.name = '选中行存在绑定数据，禁止删除';
+  } else {
+    deleteMenuItem.disabled = false;
+    deleteMenuItem.action = () => {
+      Modal.confirm({
+        title: '确认删除选中的行吗?',
+        icon: createVNode(ExclamationCircleOutlined),
+        content: `即将删除${selectedRows.length}行数据！`,
+        okType: 'danger',
+        okText: '确认删除',
+        async onOk() {
+          await BatchDel({ selectedRows, tenant_id: tenant_id.value }).then(
+            (res) => {
+              if (res.code === 0) {
+                message.success({
+                  content: res.msg,
+                });
+                params.api.applyTransaction({ remove: selectedRows });
+              } else {
+                message.error({
+                  content: res.msg,
+                });
+              }
+            },
+          );
+        },
+        onCancel() {},
+      });
+    };
+  }
+  // 批量删除菜单 /end
+
+  // 批量解除绑定菜单 /start
+  const unBindMenuItem = {
+    name: `解绑选中行(${selectedRows.length})`,
+    icon: '🔗',
+    disabled: true,
+    tooltip: '',
+    action: () => {},
+  };
+
+  if (!hasSelection) {
+    unBindMenuItem.name = '请先选择要解绑的行';
+  } else if (hasboundRows) {
+    unBindMenuItem.name = '选中行存在未绑定的数据，禁止解绑';
+  } else {
+    unBindMenuItem.disabled = false;
+    unBindMenuItem.action = () => {
+      Modal.confirm({
+        title: '确认解绑选中的行吗?',
+        icon: createVNode(ExclamationCircleOutlined),
+        content: `即将解绑${selectedRows.length}行数据！`,
+        okType: 'danger',
+        okText: '确认解绑',
+        async onOk() {
+          for (const pd of selectedRows) {
+            unBindCzCode({ pd, tenant_id: tenant_id.value }).then((res) => {
+              if (res.code === 0) {
+                /** 更新盘点数据状态 */
+                const rowNode = gridApi.value.getRowNode(pd.id);
+                rowNode.setDataValue('bind_code', '');
+                /** 更新财政数据状态 */
+                const czrowNode = czGridApi.value.getRowNode(
+                  pd.bind_cz_assets_id,
+                );
+                czrowNode.setDataValue('bind_sum', res.data.bind_sum);
+                // 当单元格值发生变化时，重绘该行
+                czGridApi.value.redrawRows({
+                  rowNodes: [czrowNode], // 刷新行节点
+                  columns: ['bind_sum'], // 刷新发生变化的列
+                });
+                // 当单元格值发生变化时，刷新单元格，这里的目的是改变该行的背景色及前景色，重新执行getRowStyle
+                czGridApi.value.refreshCells({
+                  force: true,
+                  suppressFlash: true,
+                  rowNodes: [czrowNode], // 刷新行节点
+                  columns: ['bind_sum'], // 刷新发生变化的列
+                });
+                message.success({
+                  content: res.msg,
+                });
+                return false;
+              }
+              message.error({
+                content: res.msg,
+              });
+            });
+          }
+        },
+        onCancel() {},
+      });
+    };
+  }
+  // 批量解除绑定菜单 /end
+
+  let customItems = [deleteMenuItem, 'separator']; // 删除菜单
+
+  // 对账模式下和开启解绑功能，并且加载财政菜单的情况下，才有解绑菜单
+  if (dzable.value && unbindable.value && czRowData.data.length > 0) {
+    customItems = [unBindMenuItem, deleteMenuItem, 'separator']; // 删除菜单和解绑菜单
+  }
+
+  return [...customItems, ...defaultItems];
+};
+
 const print_loading = ref(false);
 // 以下根据标签模板打印标签
 const HandlePrint = async () => {
@@ -1431,55 +1607,66 @@ const HandlePrint = async () => {
     });
     return false;
   }
+  Modal.confirm({
+    title: '打印提示！',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: `即将打印${printData.length}张标签！`,
+    okType: 'danger',
+    okText: '确认打印',
+    async onOk() {
+      // 加载打印模板
+      const json = JSON.parse(print_template.value);
+      const templateRef = reactive(json);
+      const hiprintTemplate = new hiprint.PrintTemplate({
+        template: templateRef,
+      });
 
-  // 加载打印模板
-  const json = JSON.parse(print_template.value);
-  const templateRef = reactive(json);
-  const hiprintTemplate = new hiprint.PrintTemplate({
-    template: templateRef,
-  });
+      // 请求服务端重新排序打印
+      const dataSort = reactive({ data: [] });
+      const ids = printData.map((item: any) => item.id);
+      print_loading.value = true;
+      await getPrintDataSortApi({ ids, tenant_id: tenant_id.value }).then(
+        (res: any) => {
+          dataSort.data = res.data;
+          clearSelectedRows();
+          message.success({
+            content: '正在发送打印，请稍后等待...',
+          });
+        },
+      );
+      // return false;
+      // 参数: 打印时设置 左偏移量，上偏移量
+      const options = { leftOffset: 0, topOffset: 0 };
+      // 扩展
+      const ext = {
+        callback: () => {
+          // console.log('浏览器打印窗口已打开');
+        },
+        // styleHandler: () => {
+        //   // 重写 文本 打印样式
+        //   return '<style>.hiprint-printElement-text{color:red !important;}</style>';
+        // },
+      };
 
-  // 请求服务端重新排序打印
-  const dataSort = reactive({ data: [] });
-  const ids = printData.map((item: any) => item.id);
-  print_loading.value = true;
-  await getPrintDataSortApi({ ids }).then((res: any) => {
-    dataSort.data = res.data;
-    clearSelectedRows();
-    message.success({
-      content: '正在发送打印，请稍后等待...',
-    });
-  });
-
-  // 参数: 打印时设置 左偏移量，上偏移量
-  const options = { leftOffset: 0, topOffset: 0 };
-  // 扩展
-  const ext = {
-    callback: () => {
-      // console.log('浏览器打印窗口已打开');
+      // 直接打印
+      hiprintTemplate.print2(dataSort.data, options, ext);
+      hiprintTemplate.on('printSuccess', (_data: any) => {
+        print_loading.value = false;
+        message.success({
+          content: '打印成功！',
+        });
+      });
+      hiprintTemplate.on('printError', (_data: any) => {
+        print_loading.value = false;
+        message.error({
+          content: '打印失败！',
+        });
+      });
+      // 调用浏览器打印
+      // hiprintTemplate.print(dataSort.data, options, ext);
     },
-    // styleHandler: () => {
-    //   // 重写 文本 打印样式
-    //   return '<style>.hiprint-printElement-text{color:red !important;}</style>';
-    // },
-  };
-
-  // 直接打印
-  hiprintTemplate.print2(dataSort.data, options, ext);
-  hiprintTemplate.on('printSuccess', (_data: any) => {
-    print_loading.value = false;
-    message.success({
-      content: '打印成功！',
-    });
+    async onCancel() {},
   });
-  hiprintTemplate.on('printError', (_data: any) => {
-    print_loading.value = false;
-    message.error({
-      content: '打印失败！',
-    });
-  });
-  // 调用浏览器打印
-  // hiprintTemplate.print(dataSort.data, options, ext);
 };
 </script>
 
@@ -1589,11 +1776,14 @@ const HandlePrint = async () => {
           :cell-selection="cellSelection"
           :class="agGridTheme"
           :column-defs="columnDefs"
+          :enable-range-selection="true"
           :column-hover-highlight="false"
           :get-row-id="getRowId"
           :get-row-style="getRowStyle"
           :grid-options="gridOptions"
           :row-data="rowData"
+          :get-context-menu-items="getContextMenuItems"
+          :context="{ tenant_id }"
           :suppress-row-hover-highlight="false"
           cache-block-size="{50}"
           infinite-initial-row-count="{200}"
